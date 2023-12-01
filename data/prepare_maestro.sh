@@ -1,14 +1,17 @@
 #! /bin/bash
 set -e
 
-echo Downloading the MAESTRO dataset \(87 GB\) ...
-curl -O https://storage.googleapis.com/magentadata/datasets/maestro/v1.0.0/maestro-v1.0.0.zip
+# skipping download because of already downloaded dataset
+# echo Downloading the MAESTRO dataset \(87 GB\) ...
+# curl -O https://storage.googleapis.com/magentadata/datasets/maestro/v1.0.0/maestro-v1.0.0.zip
 
-echo Extracting the files ...
-unzip -o maestro-v1.0.0.zip | awk 'BEGIN{ORS=""} {print "\rExtracting " NR "/2383 ..."; system("")} END {print "\ndone\n"}'
+# also skipping this process because the unzipping failed because of the lengthy process
+# echo Extracting the files ...
+# unzip -o maestro-v1.0.0.zip | awk 'BEGIN{ORS=""} {print "\rExtracting " NR "/2383 ..."; system("")} END {print "\ndone\n"}'
 
-rm maestro-v1.0.0.zip
-mv maestro-v1.0.0 MAESTRO
+# also duing this manually
+# rm maestro-v1.0.0.zip
+# mv maestro-v1.0.0 MAESTRO
 
 echo Converting the audio files to FLAC ...
 COUNTER=0
