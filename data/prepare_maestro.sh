@@ -8,6 +8,8 @@ set -e
 # also skipping this process because the unzipping failed because of the lengthy process
 # echo Extracting the files ...
 # unzip -o maestro-v1.0.0.zip | awk 'BEGIN{ORS=""} {print "\rExtracting " NR "/2383 ..."; system("")} END {print "\ndone\n"}'
+# command needed to unzip:
+# jar -xvf maestro-v1.0.0.zip
 
 # also duing this manually
 # rm maestro-v1.0.0.zip
