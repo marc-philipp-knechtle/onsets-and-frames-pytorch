@@ -2,9 +2,19 @@
 
 This is a [PyTorch](https://pytorch.org/) implementation of Google's [Onsets and Frames](https://magenta.tensorflow.org/onsets-frames) model, using the [Maestro dataset](https://magenta.tensorflow.org/datasets/maestro) for training and the Disklavier portion of the [MAPS database](http://www.tsi.telecom-paristech.fr/aao/en/2010/07/08/maps-database-a-piano-database-for-multipitch-estimation-and-automatic-transcription-of-music/) for testing.
 
+This fork from the original repo includes further information on running and testing these systems.
+
 ## Instructions
 
-This project is quite resource-intensive; 32 GB or larger system memory and 8 GB or larger GPU memory is recommended. 
+This project is quite resource-intensive; 32 GB or larger system memory and 8 GB or larger GPU memory is recommended.
+
+### Creating the Environment
+To simplify recreation, we provide an `environment.yml` for conda.
+It might need some editing for the `name` and `prefix` values.
+
+```bash
+conda env create -f environment.yml
+```
 
 ### Downloading Dataset
 
