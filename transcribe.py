@@ -9,21 +9,21 @@ from torch import dtype
 
 from onsets_and_frames import *
 
+
 def float_samples_to_int16(y):
-  """Convert floating-point numpy array of audio samples to int16."""
-  # From https://github.com/tensorflow/magenta/blob/671501934ff6783a7912cc3e0e628fd0ea2dc609/magenta/music/audio_io.py#L48
-  if not issubclass(y.dtype.type, np.floating):
-    raise ValueError('input samples not floating-point')
-  return (y * np.iinfo(np.int16).max).astype(np.int16)
+    """Convert floating-point numpy array of audio samples to int16."""
+    # From https://github.com/tensorflow/magenta/blob/671501934ff6783a7912cc3e0e628fd0ea2dc609/magenta/music/audio_io.py#L48
+    if not issubclass(y.dtype.type, np.floating):
+        raise ValueError('input samples not floating-point')
+    return (y * np.iinfo(np.int16).max).astype(np.int16)
 
 
 def load_and_process_audio(flac_path, sequence_length, device):
-
     random = np.random.RandomState(seed=42)
 
     audio, sr = librosa.load(flac_path, sr=SAMPLE_RATE)
     audio = float_samples_to_int16(audio)
-    
+
     assert sr == SAMPLE_RATE
     assert audio.dtype == 'int16'
 
@@ -47,32 +47,31 @@ def load_and_process_audio(flac_path, sequence_length, device):
 
 
 def transcribe(model, audio):
-
     mel = melspectrogram(audio.reshape(-1, audio.shape[-1])[:, :-1]).transpose(-1, -2)
     onset_pred, offset_pred, _, frame_pred, velocity_pred = model(mel)
 
     predictions = {
-            'onset': onset_pred.reshape((onset_pred.shape[1], onset_pred.shape[2])),
-            'offset': offset_pred.reshape((offset_pred.shape[1], offset_pred.shape[2])),
-            'frame': frame_pred.reshape((frame_pred.shape[1], frame_pred.shape[2])),
-            'velocity': velocity_pred.reshape((velocity_pred.shape[1], velocity_pred.shape[2]))
-        }
+        'onset': onset_pred.reshape((onset_pred.shape[1], onset_pred.shape[2])),
+        'offset': offset_pred.reshape((offset_pred.shape[1], offset_pred.shape[2])),
+        'frame': frame_pred.reshape((frame_pred.shape[1], frame_pred.shape[2])),
+        'velocity': velocity_pred.reshape((velocity_pred.shape[1], velocity_pred.shape[2]))
+    }
 
     return predictions
 
 
 def transcribe_file(model_file, audio_paths, save_path, sequence_length,
-                  onset_threshold, frame_threshold, device):
-
+                    onset_threshold, frame_threshold, device):
     model = torch.load(model_file, map_location=device).eval()
     summary(model)
 
-    for i,audio_path in enumerate(audio_paths):
-        print(f'{i+1}/{len(audio_paths)}: Processing {audio_path}...', file=sys.stderr)
+    for i, audio_path in enumerate(audio_paths):
+        print(f'{i + 1}/{len(audio_paths)}: Processing {audio_path}...', file=sys.stderr)
         audio = load_and_process_audio(audio_path, sequence_length, device)
         predictions = transcribe(model, audio)
 
-        p_est, i_est, v_est = extract_notes(predictions['onset'], predictions['frame'], predictions['velocity'], onset_threshold, frame_threshold)
+        p_est, i_est, v_est = extract_notes(predictions['onset'], predictions['frame'], predictions['velocity'],
+                                            onset_threshold, frame_threshold)
 
         scaling = HOP_LENGTH / SAMPLE_RATE
 
