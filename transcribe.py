@@ -82,7 +82,7 @@ def transcribe_file(model_file: str, audio_paths: str, save_path: str, sequence_
     for i, audio_path in enumerate(audio_paths):
         print(f'{i + 1}/{len(audio_paths)}: Processing {audio_path}...', file=sys.stderr)
         audio = load_and_process_audio(audio_path, sequence_length, device)
-        predictions = transcribe(model, audio)
+        predictions: dict = transcribe(model, audio)
 
         p_est, i_est, v_est = extract_notes(predictions['onset'], predictions['frame'], predictions['velocity'],
                                             onset_threshold, frame_threshold)
@@ -110,4 +110,7 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
 
     with torch.no_grad():
+        """
+        torch.no_grad() is useful for inference (not calling backward propagation)
+        """
         transcribe_file(**vars(parser.parse_args()))
