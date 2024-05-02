@@ -3,6 +3,12 @@
 This is a [PyTorch](https://pytorch.org/) implementation of Google's [Onsets and Frames](https://magenta.tensorflow.org/onsets-frames) model, using the [Maestro dataset](https://magenta.tensorflow.org/datasets/maestro) for training and the Disklavier portion of the [MAPS database](http://www.tsi.telecom-paristech.fr/aao/en/2010/07/08/maps-database-a-piano-database-for-multipitch-estimation-and-automatic-transcription-of-music/) for testing.
 
 This fork from the original repo includes further information on running and testing these systems.
+This fork is a combination of the [Original Pytorch Onset and Frames Implementation](https://github.com/jongwook/onsets-and-frames) 
+as well as a [Pull request including a pretrained model](https://github.com/jongwook/onsets-and-frames/pull/18). 
+
+Furthermore, there are some additions (ordered by importance):
+
+* switching to conda environment (environment.yaml)
 
 ## Instructions
 
