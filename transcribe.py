@@ -60,9 +60,23 @@ def transcribe(model, audio):
     return predictions
 
 
-def transcribe_file(model_file, audio_paths, save_path, sequence_length,
-                    onset_threshold, frame_threshold, device):
-    model = torch.load(model_file, map_location=device).eval()
+def transcribe_file(model_file: str, audio_paths: str, save_path: str, sequence_length: int,
+                    onset_threshold: float, frame_threshold: float, device: str):
+    """
+    Parameters
+    ----------
+    model_file
+    audio_paths
+    save_path
+    sequence_length
+    onset_threshold
+    frame_threshold
+    device is a string describing the cuda environment or the cpu if the computation is performed on the cpu
+
+    Returns
+    -------
+    """
+    model: OnsetsAndFrames = torch.load(model_file, map_location=device).eval()
     summary(model)
 
     for i, audio_path in enumerate(audio_paths):
