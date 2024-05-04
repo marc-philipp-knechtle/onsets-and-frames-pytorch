@@ -1,11 +1,15 @@
 import argparse
 import os
 import sys
+import time
+from typing import List
 
 import numpy as np
 import librosa
 from mir_eval.util import midi_to_hz
-from torch import dtype
+
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 from onsets_and_frames import *
 
@@ -60,22 +64,8 @@ def transcribe(model, audio):
     return predictions
 
 
-def transcribe_file(model_file: str, audio_paths: str, save_path: str, sequence_length: int,
+def transcribe_file(model_file: str, audio_paths: List[str], save_path: str, sequence_length: int,
                     onset_threshold: float, frame_threshold: float, device: str):
-    """
-    Parameters
-    ----------
-    model_file
-    audio_paths
-    save_path
-    sequence_length
-    onset_threshold
-    frame_threshold
-    device is a string describing the cuda environment or the cpu if the computation is performed on the cpu
-
-    Returns
-    -------
-    """
     model: OnsetsAndFrames = torch.load(model_file, map_location=device).eval()
     summary(model)
 
@@ -99,18 +89,75 @@ def transcribe_file(model_file: str, audio_paths: str, save_path: str, sequence_
         save_midi(midi_path, p_est, i_est, v_est)
 
 
+class Watcher:
+    def __init__(self, monitor_path: str, args: argparse.Namespace):
+        self.observer = Observer()
+        self.monitor_path = monitor_path
+        self.args = args
+
+    def run(self):
+        event_handler = NewRecordingHandler(self.args.model_file, self.args.save_path, self.args.sequence_length,
+                                            self.args.onset_threshold, self.args.frame_threshold, self.args.device)
+        self.observer.schedule(event_handler, self.monitor_path, recursive=True)
+        self.observer.start()
+        print(f'Watching {self.monitor_path}...')
+        try:
+            while True:
+                time.sleep(1)
+        finally:
+            self.observer.stop()
+            self.observer.join()
+
+
+class NewRecordingHandler(FileSystemEventHandler):
+
+    def __init__(self, model_file, save_path: str, sequence_length: int, onset_threshold: float, frame_threshold: float,
+                 device: str):
+        self.model_file = model_file
+        self.save_path = save_path
+        self.sequence_length = sequence_length
+        self.onset_threshold = onset_threshold
+        self.frame_threshold = frame_threshold
+        self.device = device
+
+    def on_created(self, event):
+        transcribe_file(self.model_file, [event.src_path], self.save_path, self.sequence_length, self.onset_threshold,
+                        self.frame_threshold, self.device)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('model_file', type=str)
-    parser.add_argument('audio_paths', type=str, nargs='+')
+    parser.add_argument('--audio_paths', type=str, nargs='+')
     parser.add_argument('--save-path', type=str, default='.')
     parser.add_argument('--sequence-length', default=None, type=int)
     parser.add_argument('--onset-threshold', default=0.5, type=float)
     parser.add_argument('--frame-threshold', default=0.5, type=float)
     parser.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
 
+    # This argument cannot be used in conjunction with audio_paths
+    parser.add_argument('--monitor-directory', default=None, type=str)
+
+    # todo add option to remove or retain files in output directory
+
+    # todo add option to remove the files from input in watcher mode
+
+    # todo add option to add folders to input in watcher mode -> folder naming + structure etc. is retained in output
+
     with torch.no_grad():
         """
         torch.no_grad() is useful for inference (not calling backward propagation)
         """
-        transcribe_file(**vars(parser.parse_args()))
+        if parser.parse_args().monitor_directory is not None:
+            # process all files which are currently in the directory
+            monitor_directory = parser.parse_args().monitor_directory
+            for f in os.listdir(monitor_directory):
+                if os.path.isfile(os.path.join(monitor_directory, f)):
+                    transcribe_file(parser.parse_args().model_file, [os.path.join(monitor_directory, f)],
+                                    parser.parse_args().save_path,
+                                    parser.parse_args().sequence_length, parser.parse_args().onset_threshold,
+                                    parser.parse_args().frame_threshold, parser.parse_args().device)
+            # watch the directory for new future files (which are copied/moved into this dir)
+            Watcher(parser.parse_args().monitor_directory, parser.parse_args()).run()
+        else:
+            transcribe_file(**vars(parser.parse_args()))

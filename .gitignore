@@ -2,6 +2,7 @@
 pretrained/*
 # See transcribe.py in README
 output
+input
 
 __pycache__
 .ipynb_checkpoints
