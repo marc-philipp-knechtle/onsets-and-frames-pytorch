@@ -8,6 +8,7 @@ as well as a [Pull request including a pretrained model](https://github.com/jong
 
 Furthermore, there are some additions (ordered by importance):
 
+* Adding directory handling and monitoring to [transcribe.py](transcribe.py)
 * switching to conda environment (environment.yaml)
 
 ## Instructions
