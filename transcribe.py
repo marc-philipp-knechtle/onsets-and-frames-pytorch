@@ -249,6 +249,14 @@ if __name__ == '__main__':
 
     # todo add option to remove the files from input in watcher mode
 
+    # todo adding progress bar in non-monitoring mode
+
+    # todo enabling processing of directory in non-monitoring mode
+
+    # todo write monitoring mode in separate method -> better division between monitoring and non-monitoring mode
+
+    # todo add warning in monitoring mode about missing cuda memory
+
     with torch.no_grad():
         """
         torch.no_grad() is useful for inference (not calling backward propagation)
