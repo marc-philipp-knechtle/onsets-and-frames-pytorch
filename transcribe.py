@@ -77,11 +77,12 @@ def transcribe(model: OnsetsAndFrames, audio: Tensor):
 
 
 def transcribe_file(model_file: str, audio_paths: List[str], save_path: str, sequence_length: int,
-                    onset_threshold: float, frame_threshold: float, device: str):
+                    onset_threshold: float, frame_threshold: float, device: str, show_summary: bool = True):
     torch.cuda.empty_cache()
 
     model: OnsetsAndFrames = torch.load(model_file, map_location=device).eval()
-    summary(model)
+    if show_summary:
+        summary(model)
 
     for i, audio_path in enumerate(audio_paths):
         print(f'{i + 1}/{len(audio_paths)}: Processing {audio_path}...', file=sys.stderr)
@@ -184,7 +185,7 @@ def transcribe_dir(model_file: str, directory_to_transcribe: str, save_path: str
                 transcribe_file(model_file, [os.path.join(root, filename)],
                                 os.path.join(save_path, root_without_input),
                                 sequence_length,
-                                onset_threshold, frame_threshold, device)
+                                onset_threshold, frame_threshold, device, show_summary=False)
             except KeyboardInterrupt:
                 print("Keyboard interrupt received, exiting... \n")
                 print(f"The input file will be retained, NOT REMOVED! ({os.path.join(root, filename)})")
