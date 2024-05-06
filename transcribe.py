@@ -294,19 +294,16 @@ if __name__ == '__main__':
         """
         if parser.parse_args().monitor_directory is not None:  # = watcher mode is enabled
             # process all files which are currently in the directory
-            monitor_directory = parser.parse_args().monitor_directory
+            monitor_directory = args.monitor_directory
 
             for f in os.listdir(monitor_directory):
                 if os.path.isfile(os.path.join(monitor_directory, f)):
-                    transcribe_file(parser.parse_args().model_file, [os.path.join(monitor_directory, f)],
-                                    parser.parse_args().save_path,
-                                    parser.parse_args().sequence_length, parser.parse_args().onset_threshold,
-                                    parser.parse_args().frame_threshold, parser.parse_args().device)
+                    transcribe_file(args.model_file, [os.path.join(monitor_directory, f)],
+                                    args.save_path,
+                                    args.sequence_length, args.onset_threshold,
+                                    args.frame_threshold, args.device)
                     os.remove(os.path.join(monitor_directory, f))
                 if os.path.isdir(os.path.join(monitor_directory, f)):
-                    # raise RuntimeError(
-                    #     "The handling of nested directories is not supported in the initial version. "
-                    #     "Please add the directories during runtime.")
                     transcribe_dir(args.model_file, args.monitor_directory, args.save_path, args.sequence_length,
                                    args.onset_threshold, args.frame_threshold, args.device)
                     for directory in os.listdir(args.monitor_directory):
