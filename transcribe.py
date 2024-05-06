@@ -259,7 +259,7 @@ def check_output_directory(output_directory: str, clear_output: bool):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('model_file', type=str)
-    parser.add_argument('--audio_paths', type=str, nargs='+')
+    parser.add_argument('--audio_paths', type=str, nargs='+', default=None)
     parser.add_argument('--save-path', type=str, default='.')
     parser.add_argument('--sequence-length', default=None, type=int)
     parser.add_argument('--onset-threshold', default=0.5, type=float)
@@ -292,10 +292,11 @@ if __name__ == '__main__':
         """
         torch.no_grad() is useful for inference (not calling backward propagation)
         """
-        if parser.parse_args().monitor_directory is not None:  # = watcher mode is enabled
+        if args.audio_paths is not None and args.monitor_directory is not None:
+            raise RuntimeError("Specified arguments audio_paths and monitor_directory are mutually exclusive.")
+        elif args.monitor_directory is not None:  # = watcher mode is enabled
             # process all files which are currently in the directory
             monitor_directory = args.monitor_directory
-
             for f in os.listdir(monitor_directory):
                 if os.path.isfile(os.path.join(monitor_directory, f)):
                     transcribe_file(args.model_file, [os.path.join(monitor_directory, f)],
@@ -310,5 +311,7 @@ if __name__ == '__main__':
                         shutil.rmtree(os.path.join(args.monitor_directory, directory))
             # watch the directory for new future files (which are copied/moved into this dir)
             Watcher(parser.parse_args().monitor_directory, parser.parse_args()).run()
-        else:  # = just the processing of the files in given directort
+        elif args.audio_paths is not None:
             transcribe_file(**vars(parser.parse_args()))
+        else:
+            raise RuntimeError("You have to either specify audio_paths or monitor_directory.")
