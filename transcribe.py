@@ -146,7 +146,7 @@ def count_files_recursively(dir_path: str) -> int:
     """
     total_files: int = 0
     for dirpath, dirnames, filenames in os.walk(dir_path):
-        total_files = + len(filenames)
+        total_files += len(filenames)
     return total_files
 
 
@@ -240,6 +240,22 @@ class NewRecordingHandler(FileSystemEventHandler):
             raise RuntimeError("Handling of events other than file or directory is not supported!")
 
 
+def check_output_directory(output_directory: str, clear_output: bool):
+    if len(output_directory) and clear_output:
+        # Ensure that the output directory by itself is not removed, only the directories within that output directory
+        user_input: str = ""
+        if count_files_recursively(output_directory) >= 10:
+            user_input = input("Detected more than 10 files to be deleted from the output (--clear-output):\n"
+                               "Do you really want to continue? [y/n]")
+        if user_input == "y":
+            for d in os.listdir(output_directory):
+                shutil.rmtree(os.path.join(output_directory, d))
+            print(f"Cleared output directory: {output_directory}")
+        else:
+            raise RuntimeError(
+                "Stopping the execution of the application. --clear-output specified without reassurement.")
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('model_file', type=str)
@@ -256,15 +272,7 @@ if __name__ == '__main__':
 
     args: argparse.Namespace = parser.parse_args()
 
-    if len(os.listdir(args.save_path)) and parser.parse_args().clear_output:
-        # Ensure that the output directory by itself is not removed, only the directories within that output directory
-        # todo adding a warning when clearing significant amounts of data
-        for directory in os.listdir(args.save_path):
-            shutil.rmtree(os.path.join(args.save_path, directory))
-        print(f"Cleared output directory: {args.save_path}")
-    elif not parser.parse_args().clear_output and len(os.listdir(parser.parse_args().save_path)):
-        raise RuntimeError("Output directory is not empty!\nPlease remove the files currently in the directory."
-                           "Or run with --clear-output to remove them.")
+    check_output_directory(args.save_path, args.clear_output)
 
     # todo add option to remove the files from input in watcher mode
 
