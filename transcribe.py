@@ -152,12 +152,15 @@ def count_files_recursively(dir_path: str) -> int:
 
 def transcribe_dir(model_file: str, directory_to_transcribe: str, save_path: str, sequence_length: int,
                    onset_threshold: float,
-                   frame_threshold: float, device: str):
+                   frame_threshold: float, device: str, remove_input: bool = False):
     """
     This is an adapted version of transcribe_file. The goal of this method is to retain the directory structure.
     Sometimes, there are naming conventions included in the naming of the directories. This method is intended to retain
     them.
+    IMPORTANT DIFFERENCE!
+    The transcribe_dir method removes the processed files directly after they are finished processing!
     Args:
+        remove_input:
         model_file:
         directory_to_transcribe:
         save_path:
@@ -165,8 +168,6 @@ def transcribe_dir(model_file: str, directory_to_transcribe: str, save_path: str
         onset_threshold:
         frame_threshold:
         device:
-
-    Returns:
     """
     duplicate_directory_structure(directory_to_transcribe, save_path)
     # This is the directory name of the input. We save this to prune the name from the path
@@ -179,10 +180,19 @@ def transcribe_dir(model_file: str, directory_to_transcribe: str, save_path: str
         root_without_input = remove_prefix(root, input_dirname)
         root_without_input = remove_prefix(root_without_input, os.sep)
         for filename in files:
-            transcribe_file(model_file, [os.path.join(root, filename)],
-                            os.path.join(save_path, root_without_input),
-                            sequence_length,
-                            onset_threshold, frame_threshold, device)
+            try:
+                transcribe_file(model_file, [os.path.join(root, filename)],
+                                os.path.join(save_path, root_without_input),
+                                sequence_length,
+                                onset_threshold, frame_threshold, device)
+            except KeyboardInterrupt:
+                print("Keyboard interrupt received, exiting... \n")
+                print(f"The input file will be retained, NOT REMOVED! ({os.path.join(root, filename)})")
+                print("Please check the output manually if there are any files to clean up!")
+                sys.exit(0)
+            if remove_input:
+                print(f"Finished processing: {os.path.join(root, filename)}, removing file from input directory!")
+                os.remove(os.path.join(root, filename))
 
 
 class Watcher:
@@ -271,7 +281,7 @@ def handle_file_or_directory(path: str, args: argparse.Namespace):
             os.remove(os.path.join(path, f))
         if os.path.isdir(os.path.join(path, f)):
             transcribe_dir(args.model_file, path, args.save_path, args.sequence_length,
-                           args.onset_threshold, args.frame_threshold, args.device)
+                           args.onset_threshold, args.frame_threshold, args.device, args.remove_input)
             for directory in os.listdir(path):
                 shutil.rmtree(os.path.join(path, directory))
 
@@ -313,6 +323,7 @@ if __name__ == '__main__':
     parser.add_argument('--frame-threshold', default=0.5, type=float)
     parser.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
     parser.add_argument('--clear-output', type=bool, default=False)
+    parser.add_argument('--remove-input', type=bool, default=False)
 
     # This argument cannot be used in conjunction with audio_paths
     parser.add_argument('--monitor-directory', default=None, type=str)
