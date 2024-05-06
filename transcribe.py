@@ -273,14 +273,16 @@ def handle_file_or_directory(path: str, args: argparse.Namespace):
         path: path is not extracted from args variable to allow for differentiation audio_paths and monitor_directory
         args: argparse args
     """
-    for f in os.listdir(path):
-        if os.path.isfile(os.path.join(path, f)):
-            transcribe_file(args.model_file, [os.path.join(path, f)],
+    # This is required, because it might happen that a filepath is passed to this function
+    dirpath = os.path.dirname(path) if os.path.isfile(path) else path
+    for f in os.listdir(dirpath):
+        if os.path.isfile(os.path.join(dirpath, f)):
+            transcribe_file(args.model_file, [os.path.join(dirpath, f)],
                             args.save_path,
                             args.sequence_length, args.onset_threshold,
                             args.frame_threshold, args.device)
-            os.remove(os.path.join(path, f))
-        if os.path.isdir(os.path.join(path, f)):
+            os.remove(os.path.join(dirpath, f))
+        if os.path.isdir(os.path.join(dirpath, f)):
             transcribe_dir(args.model_file, path, args.save_path, args.sequence_length,
                            args.onset_threshold, args.frame_threshold, args.device, args.remove_input)
             for directory in os.listdir(path):
