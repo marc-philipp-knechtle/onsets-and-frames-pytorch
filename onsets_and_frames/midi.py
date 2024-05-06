@@ -30,7 +30,8 @@ def parse_midi(path):
         if 'note' in message.type:
             # MIDI offsets can be either 'note_off' events or 'note_on' with zero velocity
             velocity = message.velocity if message.type == 'note_on' else 0
-            event = dict(index=len(events), time=time, type='note', note=message.note, velocity=velocity, sustain=sustain)
+            event = dict(index=len(events), time=time, type='note', note=message.note, velocity=velocity,
+                         sustain=sustain)
             events.append(event)
 
     notes = []
@@ -76,13 +77,13 @@ def save_midi(path, pitches, intervals, velocities):
         interval_list.sort(key=lambda x: x[0][0])
         for i in range(len(interval_list) - 1):
             # assert interval_list[i][1] <= interval_list[i+1][0], f'End time should be smaller of equal start time of next note on the same pitch. It was {interval_list[i][1]}, {interval_list[i+1][0]} for pitch {key}'
-            interval_list[i][0][1] = min(interval_list[i][0][1], interval_list[i+1][0][0])
+            interval_list[i][0][1] = min(interval_list[i][0][1], interval_list[i + 1][0][0])
 
     for pitch in intervals_dict:
         interval_list = intervals_dict[pitch]
-        for interval,i in interval_list:
+        for interval, i in interval_list:
             pitch = int(round(hz_to_midi(pitches[i])))
-            velocity = int(127*min(velocities[i], 1))
+            velocity = int(127 * min(velocities[i], 1))
             note = pretty_midi.Note(velocity=velocity, pitch=pitch, start=interval[0], end=interval[1])
             piano.notes.append(note)
 
@@ -108,5 +109,6 @@ if __name__ == '__main__':
                 continue
 
             yield (input_file, output_file)
+
 
     Parallel(n_jobs=multiprocessing.cpu_count())(delayed(process)(in_file, out_file) for in_file, out_file in files())
