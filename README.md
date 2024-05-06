@@ -8,7 +8,7 @@ as well as a [Pull request including a pretrained model](https://github.com/jong
 
 Furthermore, there are some additions (ordered by importance):
 
-* Adding directory handling and monitoring to [transcribe.py](transcribe.py)
+* Adding directory handling and monitoring to [transcribe.py](transcribe.py). This is especially important for the handling of nested directories -> The structure is retained in the output
 * switching to conda environment (environment.yaml)
 
 ## Instructions
