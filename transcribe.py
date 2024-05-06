@@ -286,6 +286,7 @@ def main(args: argparse.Namespace):
     # todo adding removal of the files once ready when processing when in directory mode
     # -> easier debugging when sth goes wrong
     # -> it's possible to rerun some predictions without
+    # todo adding loguru
     with torch.no_grad():
         """
         torch.no_grad() is useful for inference (not calling backward propagation)
