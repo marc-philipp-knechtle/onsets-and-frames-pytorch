@@ -127,9 +127,27 @@ def duplicate_directory_structure(src: str, dst: str):
 
 
 def remove_prefix(text: str, prefix: str):
+    """
+    Args:
+        text: some string text
+        prefix: the prefix to remove from this text. The prefix has to match exactly the text which will be removed.
+    Returns:
+    """
     if text.startswith(prefix):
         return text[len(prefix):]
     return text
+
+
+def count_files_recursively(dir_path: str) -> int:
+    """
+    Args:
+        dir_path: directory path which is traversed recursively
+    Returns: the number of all files in this directory
+    """
+    total_files: int = 0
+    for dirpath, dirnames, filenames in os.walk(dir_path):
+        total_files = + len(filenames)
+    return total_files
 
 
 def transcribe_dir(model_file: str, directory_to_transcribe: str, save_path: str, sequence_length: int,
@@ -240,6 +258,7 @@ if __name__ == '__main__':
 
     if len(os.listdir(args.save_path)) and parser.parse_args().clear_output:
         # Ensure that the output directory by itself is not removed, only the directories within that output directory
+        # todo adding a warning when clearing significant amounts of data
         for directory in os.listdir(args.save_path):
             shutil.rmtree(os.path.join(args.save_path, directory))
         print(f"Cleared output directory: {args.save_path}")
@@ -256,6 +275,10 @@ if __name__ == '__main__':
     # todo write monitoring mode in separate method -> better division between monitoring and non-monitoring mode
 
     # todo add warning in monitoring mode about missing cuda memory
+
+    # todo adding removal of the files once ready when processing when in directory mode
+    # -> easier debugging when sth goes wrong
+    # -> it's possible to rerun some predictions without
 
     with torch.no_grad():
         """
