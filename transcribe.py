@@ -296,15 +296,14 @@ if __name__ == '__main__':
             raise RuntimeError("Specified arguments audio_paths and monitor_directory are mutually exclusive.")
         elif args.monitor_directory is not None:  # = watcher mode is enabled
             # process all files which are currently in the directory
-            monitor_directory = args.monitor_directory
-            for f in os.listdir(monitor_directory):
-                if os.path.isfile(os.path.join(monitor_directory, f)):
-                    transcribe_file(args.model_file, [os.path.join(monitor_directory, f)],
+            for f in os.listdir(args.monitor_directory):
+                if os.path.isfile(os.path.join(args.monitor_directory, f)):
+                    transcribe_file(args.model_file, [os.path.join(args.monitor_directory, f)],
                                     args.save_path,
                                     args.sequence_length, args.onset_threshold,
                                     args.frame_threshold, args.device)
-                    os.remove(os.path.join(monitor_directory, f))
-                if os.path.isdir(os.path.join(monitor_directory, f)):
+                    os.remove(os.path.join(args.monitor_directory, f))
+                if os.path.isdir(os.path.join(args.monitor_directory, f)):
                     transcribe_dir(args.model_file, args.monitor_directory, args.save_path, args.sequence_length,
                                    args.onset_threshold, args.frame_threshold, args.device)
                     for directory in os.listdir(args.monitor_directory):
