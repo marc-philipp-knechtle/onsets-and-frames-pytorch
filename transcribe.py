@@ -256,6 +256,54 @@ def check_output_directory(output_directory: str, clear_output: bool):
                 "Stopping the execution of the application. --clear-output specified without reassurement.")
 
 
+def handle_file_or_directory(path: str, args: argparse.Namespace):
+    """
+    Args:
+        path: path is not extracted from args variable to allow for differentiation audio_paths and monitor_directory
+        args: argparse args
+    """
+    for f in os.listdir(path):
+        if os.path.isfile(os.path.join(path, f)):
+            transcribe_file(args.model_file, [os.path.join(path, f)],
+                            args.save_path,
+                            args.sequence_length, args.onset_threshold,
+                            args.frame_threshold, args.device)
+            os.remove(os.path.join(path, f))
+        if os.path.isdir(os.path.join(path, f)):
+            transcribe_dir(args.model_file, path, args.save_path, args.sequence_length,
+                           args.onset_threshold, args.frame_threshold, args.device)
+            for directory in os.listdir(path):
+                shutil.rmtree(os.path.join(path, directory))
+
+
+def main(args: argparse.Namespace):
+    check_output_directory(args.save_path, args.clear_output)
+    # todo add option to remove the files from input in watcher mode
+    # todo adding progress bar in non-monitoring mode
+    # todo enabling processing of directory in non-monitoring mode
+    # todo write monitoring mode in separate method -> better division between monitoring and non-monitoring mode
+    # todo add warning in monitoring mode about missing cuda memory
+    # todo adding removal of the files once ready when processing when in directory mode
+    # -> easier debugging when sth goes wrong
+    # -> it's possible to rerun some predictions without
+    with torch.no_grad():
+        """
+        torch.no_grad() is useful for inference (not calling backward propagation)
+        """
+        if args.audio_paths is not None and args.monitor_directory is not None:
+            raise RuntimeError("Specified arguments audio_paths and monitor_directory are mutually exclusive.")
+        elif args.monitor_directory is not None:  # = watcher mode is enabled
+            # process all files which are currently in the directory
+            handle_file_or_directory(args.monitor_directory, args)
+            # watch the directory for new future files (which are copied/moved into this dir)
+            Watcher(parser.parse_args().monitor_directory, parser.parse_args()).run()
+        elif args.audio_paths is not None:
+            for path in args.audio_paths:
+                handle_file_or_directory(path, args)
+        else:
+            raise RuntimeError("You have to either specify audio_paths or monitor_directory.")
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('model_file', type=str)
@@ -270,47 +318,6 @@ if __name__ == '__main__':
     # This argument cannot be used in conjunction with audio_paths
     parser.add_argument('--monitor-directory', default=None, type=str)
 
-    args: argparse.Namespace = parser.parse_args()
+    arguments: argparse.Namespace = parser.parse_args()
 
-    check_output_directory(args.save_path, args.clear_output)
-
-    # todo add option to remove the files from input in watcher mode
-
-    # todo adding progress bar in non-monitoring mode
-
-    # todo enabling processing of directory in non-monitoring mode
-
-    # todo write monitoring mode in separate method -> better division between monitoring and non-monitoring mode
-
-    # todo add warning in monitoring mode about missing cuda memory
-
-    # todo adding removal of the files once ready when processing when in directory mode
-    # -> easier debugging when sth goes wrong
-    # -> it's possible to rerun some predictions without
-
-    with torch.no_grad():
-        """
-        torch.no_grad() is useful for inference (not calling backward propagation)
-        """
-        if args.audio_paths is not None and args.monitor_directory is not None:
-            raise RuntimeError("Specified arguments audio_paths and monitor_directory are mutually exclusive.")
-        elif args.monitor_directory is not None:  # = watcher mode is enabled
-            # process all files which are currently in the directory
-            for f in os.listdir(args.monitor_directory):
-                if os.path.isfile(os.path.join(args.monitor_directory, f)):
-                    transcribe_file(args.model_file, [os.path.join(args.monitor_directory, f)],
-                                    args.save_path,
-                                    args.sequence_length, args.onset_threshold,
-                                    args.frame_threshold, args.device)
-                    os.remove(os.path.join(args.monitor_directory, f))
-                if os.path.isdir(os.path.join(args.monitor_directory, f)):
-                    transcribe_dir(args.model_file, args.monitor_directory, args.save_path, args.sequence_length,
-                                   args.onset_threshold, args.frame_threshold, args.device)
-                    for directory in os.listdir(args.monitor_directory):
-                        shutil.rmtree(os.path.join(args.monitor_directory, directory))
-            # watch the directory for new future files (which are copied/moved into this dir)
-            Watcher(parser.parse_args().monitor_directory, parser.parse_args()).run()
-        elif args.audio_paths is not None:
-            transcribe_file(**vars(parser.parse_args()))
-        else:
-            raise RuntimeError("You have to either specify audio_paths or monitor_directory.")
+    main(arguments)
