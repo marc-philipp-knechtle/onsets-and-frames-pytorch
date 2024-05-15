@@ -29,8 +29,24 @@ def evaluate(data, model, onset_threshold=0.5, frame_threshold=0.5, save_path=No
         for key, value in pred.items():
             value.squeeze_(0).relu_()
 
+        """
+        reference = ground truth value
+        pitches
+        intervals
+        velocities
+        """
+        p_ref: np.ndarray
+        i_ref: np.ndarray
+        v_ref: np.ndarray
         p_ref, i_ref, v_ref = extract_notes(label['onset'], label['frame'], label['velocity'])
-        p_est, i_est, v_est = extract_notes(pred['onset'], pred['frame'], pred['velocity'], onset_threshold, frame_threshold)
+        """
+        estimate = prediction
+        pitches 
+        intervals
+        velocities
+        """
+        p_est, i_est, v_est = extract_notes(pred['onset'], pred['frame'], pred['velocity'], onset_threshold,
+                                            frame_threshold)
 
         t_ref, f_ref = notes_to_frames(p_ref, i_ref, label['frame'].shape)
         t_est, f_est = notes_to_frames(p_est, i_est, pred['frame'].shape)
@@ -73,7 +89,8 @@ def evaluate(data, model, onset_threshold=0.5, frame_threshold=0.5, save_path=No
         metrics['metric/note-with-offsets-and-velocity/overlap'].append(o)
 
         frame_metrics = evaluate_frames(t_ref, f_ref, t_est, f_est)
-        metrics['metric/frame/f1'].append(hmean([frame_metrics['Precision'] + eps, frame_metrics['Recall'] + eps]) - eps)
+        metrics['metric/frame/f1'].append(
+            hmean([frame_metrics['Precision'] + eps, frame_metrics['Recall'] + eps]) - eps)
 
         for key, loss in frame_metrics.items():
             metrics['metric/frame/' + key.lower().replace(' ', '_')].append(loss)
