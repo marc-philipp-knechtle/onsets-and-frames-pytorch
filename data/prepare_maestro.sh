@@ -1,19 +1,20 @@
 #! /bin/bash
 set -e
 
-# skipping download because of already downloaded dataset
-# echo Downloading the MAESTRO dataset \(87 GB\) ...
-# curl -O https://storage.googleapis.com/magentadata/datasets/maestro/v1.0.0/maestro-v1.0.0.zip
+MAESTRO_DIR="../data/MAESTRO"
 
-# also skipping this process because the unzipping failed because of the lengthy process
-# echo Extracting the files ...
-# unzip -o maestro-v1.0.0.zip | awk 'BEGIN{ORS=""} {print "\rExtracting " NR "/2383 ..."; system("")} END {print "\ndone\n"}'
-# command needed to unzip:
-# jar -xvf maestro-v1.0.0.zip
-
-# also duing this manually
-# rm maestro-v1.0.0.zip
-# mv maestro-v1.0.0 MAESTRO
+if ! [ -d "$MAESTRO_DIR" ]; then
+  echo Downloading the MAESTRO dataset \(87 GB\) ...
+  curl -O https://storage.googleapis.com/magentadata/datasets/maestro/v1.0.0/maestro-v1.0.0.zip
+  # echo Extracting the files ...
+  # unzip -o maestro-v1.0.0.zip | awk 'BEGIN{ORS=""} {print "\rExtracting " NR "/2383 ..."; system("")} END {print "\ndone\n"}'
+  # command needed to unzip:
+  # jar -xvf maestro-v1.0.0.zip
+  # rm maestro-v1.0.0.zip
+  # mv maestro-v1.0.0 MAESTRO
+else
+  echo MAESTRO is already downloaded. Skipping download and extraction part.
+fi
 
 echo Converting the audio files to FLAC ...
 COUNTER=0
