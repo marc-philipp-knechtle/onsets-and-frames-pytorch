@@ -2,6 +2,7 @@ import json
 import os
 from abc import abstractmethod
 from glob import glob
+from typing import List, Tuple
 
 import numpy as np
 import soundfile
@@ -137,7 +138,13 @@ class MAESTRO(PianoRollAudioDataset):
     def available_groups(cls):
         return ['train', 'validation', 'test']
 
-    def files(self, group):
+    def files(self, group) -> List[Tuple]:
+        """
+        Args:
+            group: e.g. train, validation, test
+        Returns: the list of input files (audio_filename, tsv_filename) for this group
+        to my understanding, the tsv contains onset, offset, note value and velocity of each note
+        """
         if group not in self.available_groups():
             # year-based grouping
             flacs = sorted(glob(os.path.join(self.path, group, '*.flac')))
@@ -151,9 +158,11 @@ class MAESTRO(PianoRollAudioDataset):
         else:
             metadata = json.load(open(os.path.join(self.path, 'maestro-v1.0.0.json')))
             files = sorted([(os.path.join(self.path, row['audio_filename'].replace('.wav', '.flac')),
-                             os.path.join(self.path, row['midi_filename'])) for row in metadata if row['split'] == group])
+                             os.path.join(self.path, row['midi_filename'])) for row in metadata if
+                            row['split'] == group])
 
-            files = [(audio if os.path.exists(audio) else audio.replace('.flac', '.wav'), midi) for audio, midi in files]
+            files = [(audio if os.path.exists(audio) else audio.replace('.flac', '.wav'), midi) for audio, midi in
+                     files]
 
         result = []
         for audio_path, midi_path in files:
@@ -167,17 +176,19 @@ class MAESTRO(PianoRollAudioDataset):
 
 class MAPS(PianoRollAudioDataset):
     def __init__(self, path='data/MAPS', groups=None, sequence_length=None, seed=42, device=DEFAULT_DEVICE):
-        super().__init__(path, groups if groups is not None else ['ENSTDkAm', 'ENSTDkCl'], sequence_length, seed, device)
+        super().__init__(path, groups if groups is not None else ['ENSTDkAm', 'ENSTDkCl'], sequence_length, seed,
+                         device)
 
     @classmethod
     def available_groups(cls):
-        return ['AkPnBcht', 'AkPnBsdf', 'AkPnCGdD', 'AkPnStgb', 'ENSTDkAm', 'ENSTDkCl', 'SptkBGAm', 'SptkBGCl', 'StbgTGd2']
+        return ['AkPnBcht', 'AkPnBsdf', 'AkPnCGdD', 'AkPnStgb', 'ENSTDkAm', 'ENSTDkCl', 'SptkBGAm', 'SptkBGCl',
+                'StbgTGd2']
 
     def files(self, group):
         flacs = glob(os.path.join(self.path, 'flac', '*_%s.flac' % group))
         tsvs = [f.replace('/flac/', '/tsv/matched/').replace('.flac', '.tsv') for f in flacs]
 
-        assert(all(os.path.isfile(flac) for flac in flacs))
-        assert(all(os.path.isfile(tsv) for tsv in tsvs))
+        assert (all(os.path.isfile(flac) for flac in flacs))
+        assert (all(os.path.isfile(tsv) for tsv in tsvs))
 
         return sorted(zip(flacs, tsvs))
