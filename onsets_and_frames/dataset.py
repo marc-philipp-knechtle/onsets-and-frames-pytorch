@@ -165,10 +165,13 @@ class MAESTRO(PianoRollAudioDataset):
                      files]
 
         result = []
+        audio_path: str
+        midi_path: str
         for audio_path, midi_path in files:
             tsv_filename = midi_path.replace('.midi', '.tsv').replace('.mid', '.tsv')
             if not os.path.exists(tsv_filename):
-                midi = parse_midi(midi_path)
+                midi: np.ndarray = parse_midi(midi_path)
+                # midi is an array consisting of onset, offset, note and velocity
                 np.savetxt(tsv_filename, midi, fmt='%.6f', delimiter='\t', header='onset,offset,note,velocity')
             result.append((audio_path, tsv_filename))
         return result
