@@ -31,6 +31,10 @@ def config():
     model_complexity = 48
 
     if torch.cuda.is_available() and torch.cuda.get_device_properties(torch.cuda.current_device()).total_memory < 10e9:
+        print(
+            f'total memory available from cuda: '
+            f'{torch.cuda.get_device_properties(torch.cuda.current_device()).total_memory/(1024**3):.2f}GB\n'
+            f'This is smaller than required: {10e9/(1024**3):.2f}GB')
         batch_size //= 2
         sequence_length //= 2
         print(f'Reducing batch size to {batch_size} and sequence_length to {sequence_length} to save memory')
@@ -69,7 +73,8 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
         dataset = MAESTRO(groups=train_groups, sequence_length=sequence_length)
         validation_dataset = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
     else:
-        dataset = MAPS(groups=['AkPnBcht', 'AkPnBsdf', 'AkPnCGdD', 'AkPnStgb', 'SptkBGAm', 'SptkBGCl', 'StbgTGd2'], sequence_length=sequence_length)
+        dataset = MAPS(groups=['AkPnBcht', 'AkPnBsdf', 'AkPnCGdD', 'AkPnStgb', 'SptkBGAm', 'SptkBGCl', 'StbgTGd2'],
+                       sequence_length=sequence_length)
         validation_dataset = MAPS(groups=['ENSTDkAm', 'ENSTDkCl'], sequence_length=validation_length)
 
     loader = DataLoader(dataset, batch_size, shuffle=True, drop_last=True)
