@@ -10,7 +10,7 @@ from mir_eval.util import hz_to_midi
 from tqdm import tqdm
 
 
-def parse_midi(path):
+def parse_midi(path: str) -> np.ndarray:
     """open midi file and return np.array of (onset, offset, note, velocity) rows"""
     midi = mido.MidiFile(path)
 
