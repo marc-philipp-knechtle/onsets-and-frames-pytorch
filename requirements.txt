@@ -133,7 +133,9 @@ markdown==3.2.2 \
 mido==1.2.9 \
     --hash=sha256:fc6364efa028c8405166f63e6a83cbc6c17aaeac2c28680abe64ae48703a89dd \
     --hash=sha256:c4a7d5528fefa3d3dcaa2056d4bc873e2c96a395658d15af5a89c8c3fa7c7acc
--e git+https://github.com/craffel/mir_eval.git@ffb77ba720d4d0cea030fc6e3d034913510e21d6#egg=mir-eval
+# -e git+https://github.com/craffel/mir_eval.git@ffb77ba720d4d0cea030fc6e3d034913510e21d6#egg=mir-eval
+mir-eval==0.6 \
+    --hash=sha256:f87310e326ad9f80ba65e3f0d1ced2013a2845016fc51d7af56c79195668d216
 munch==2.5.0 \
     --hash=sha256:6f44af89a2ce4ed04ff8de41f70b226b984db10a91dcc7b9ac2efc1c77022fdd \
     --hash=sha256:2d735f6f24d4dba3417fa448cae40c6e896ec1fdab6cdb5e6510999758a4dbd2
