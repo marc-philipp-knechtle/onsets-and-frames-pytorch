@@ -37,10 +37,7 @@ This will download the full Maestro dataset from Google's server and automatical
 
 ### Training
 
-All package requirements are contained in `requirements.txt`. To train the model, run:
-
 ```bash
-pip install -r requirements.txt
 python train.py
 ```
 
