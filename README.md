@@ -75,6 +75,17 @@ You can download a pretrained model [here](https://drive.google.com/file/d/1Mj2E
 python transcribe.py model-500000.pt <path to audio files> --save-path output/
 ```
 
+## Docker Container
+Building:
+```bash
+docker build -t onsets-and-frames-pytorch:1.0 .
+```
+
+Running:
+```bash
+docker run --name onsets-and-frames-pytorch --gpus all  -v /media/mpk/external-nvme/onsets-and-frames-pytorch/data/MAESTRO:/workspace/data/MAESTRO -v /media/mpk/external-nvme/onset-and-frames-pytroch/runs:/workspace/runs -t onsets-and-frames-pytorch:1.0
+```
+
 ## Implementation Details
 
 This implementation contains a few of the additional improvements on the model that were reported in the Maestro paper, including:
