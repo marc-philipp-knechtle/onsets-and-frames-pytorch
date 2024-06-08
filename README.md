@@ -76,15 +76,16 @@ python transcribe.py model-500000.pt <path to audio files> --save-path output/
 ```
 
 ## Docker Container
+### Local Testing
 Building:
 ```bash
 docker build -t onsets-and-frames-pytorch:1.0 .
 ```
-
 Running:
 ```bash
 docker run --name onsets-and-frames-pytorch --gpus all  -v /media/mpk/external-nvme/onsets-and-frames-pytorch/data/MAESTRO:/workspace/data/MAESTRO -v /media/mpk/external-nvme/onset-and-frames-pytroch/runs:/workspace/runs -t onsets-and-frames-pytorch:1.0
 ```
+### Using 
 
 ## Implementation Details
 
