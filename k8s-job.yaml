@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: &jobname test-job # this is an arbitrary name for the local container
+spec:
+  template:
+    spec:
+      containers:
+        - name: *jobname # gets read as "test-job" as it links to the variable definition above
+          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-pytorch:0.0.1
+          imagePullPolicy: "IfNotPresent"
+          env:
+            - name: TEST
+              value: "hello"
+          resources:
+            limits: &resources
+              nvidia.com/gpu: "0"
+              cpu: "2"
+              memory: "1Gi"
+            requests: *resources # sets requests = limits
+          command: ["python3", "-c", "print('asdf')"]
+      imagePullSecrets:
+        - name: lsx-registry
+      restartPolicy: "Never"
