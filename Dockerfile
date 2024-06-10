@@ -17,7 +17,7 @@ COPY evaluate.py .
 # Testing if the container has all dependencies
 RUN conda run -n onsets-and-frames-pytorch python3 -c "import torch"
 
-ENTRYPOINT ["conda", "run", "-n", "onsets-and-frames-pytorch", "python3", "train.py"]
+# ENTRYPOINT ["conda", "run", "-n", "onsets-and-frames-pytorch", "python3", "train.py"]
 
 # Set a dummy entrypoint for debugging
 # ENTRYPOINT ["/bin/bash"]
