@@ -1,24 +1,49 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: &jobname test-job # this is an arbitrary name for the local container
+  name: &jobname onsets-and-frames-pytorch-training # this is an arbitrary name for the local container
 spec:
   template:
     spec:
+      priorityClassName: research-low
+      # nodeSelector:
+      #     gputype: rtx2080ti
       containers:
         - name: *jobname # gets read as "test-job" as it links to the variable definition above
           image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-pytorch:0.0.1
           imagePullPolicy: "IfNotPresent"
           env:
-            - name: TEST
-              value: "hello"
+              - name: DATADIR
+                value: "/home/ext/ch1/data"
+              - name: WORKSPACE
+                value: "/home/ext/ch1/workspace"
           resources:
             limits: &resources
               nvidia.com/gpu: "0"
-              cpu: "2"
-              memory: "1Gi"
+              cpu: "16"
+              memory: "16Gi"
             requests: *resources # sets requests = limits
           command: ["python3", "-c", "print('asdf')"]
+          volumeMounts:
+              - mountPath: /home/ext/ch1 # directory IN the container
+                name: &ceph_mount_name localdir # matches volume-name from below
+              - mountPath: /dev/shm # fixes a common pytorch issue. just always mount this here
+                name: dshm
       imagePullSecrets:
         - name: lsx-registry
       restartPolicy: "Never"
+      volumes:
+          - name: *ceph_mount_name # gets evaluated as "localdir"
+            cephfs:
+                monitors:
+                    - 132.187.14.16
+                    - 132.187.14.17
+                    - 132.187.14.19
+                    - 132.187.14.20  # Not important for you, just copy along
+                user: extch1  # <namespace>
+                path: "/home/ext/ch1" # The path you want to mount
+                secretRef: # The name of the secret for auth. Is always "ceph-secret"
+                  name: ceph-secret
+          - name: dshm # "needs" to be copied along, see above
+            emptyDir:
+                medium: "Memory"
