@@ -6,26 +6,26 @@ spec:
   template:
     spec:
       priorityClassName: research-low
-      nodeSelector:
-          gputype: gtx1080ti
+      # nodeSelector:
+      #     gputype: gtx1080ti
       containers:
         - name: *jobname # gets read as "test-job" as it links to the variable definition above
           image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-pytorch:0.0.1
           imagePullPolicy: "IfNotPresent"
           env:
               - name: DATADIR
-                value: "/home/ext/ch1/data"
+                value: "/workspace/data"
               - name: WORKSPACE
-                value: "/home/ext/ch1/workspace"
+                value: "/workspace"
           resources:
             limits: &resources
-              nvidia.com/gpu: "1"
+              nvidia.com/gpu: "0"
               cpu: "16"
               memory: "16Gi"
             requests: *resources # sets requests = limits
-          command: ["conda", "run", "-n", "onsets-and-frames-pytorch", "python3", "-c", "import torch; print(torch.cuda.is_available())"]
+          command: ["ls", "/workspace/data"]
           volumeMounts:
-              - mountPath: /home/ext/ch1 # directory IN the container
+              - mountPath: /workspace/data # directory IN the container
                 name: &ceph_mount_name localdir # matches volume-name from below
               - mountPath: /dev/shm # fixes a common pytorch issue. just always mount this here
                 name: dshm
