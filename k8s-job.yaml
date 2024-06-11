@@ -6,8 +6,8 @@ spec:
   template:
     spec:
       priorityClassName: research-low
-      # nodeSelector:
-      #     gputype: gtx1080ti
+      nodeSelector:
+          gputype: gtx1080ti
       containers:
         - name: *jobname # gets read as "test-job" as it links to the variable definition above
           image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-pytorch:0.0.1
@@ -19,11 +19,11 @@ spec:
                 value: "/workspace"
           resources:
             limits: &resources
-              nvidia.com/gpu: "0"
+              nvidia.com/gpu: "1"
               cpu: "16"
-              memory: "16Gi"
+              memory: "32Gi"
             requests: *resources # sets requests = limits
-          command: ["ls", "/workspace/data"]
+          command: ["conda", "run", "-n", "onsets-and-frames-pytorch", "python3", "train.py"]
           volumeMounts:
               - mountPath: /workspace/data # directory IN the container
                 name: &ceph_mount_name localdir # matches volume-name from below
