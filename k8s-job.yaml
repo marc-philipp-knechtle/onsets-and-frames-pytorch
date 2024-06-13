@@ -6,8 +6,8 @@ spec:
   template:
     spec:
       priorityClassName: research-low
-      nodeSelector:
-          gputype: gtx1080ti
+      # nodeSelector:
+      #     gputype: gtx1080ti
       containers:
         - name: *jobname # gets read as "test-job" as it links to the variable definition above
           image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-pytorch:0.0.1
@@ -17,6 +17,8 @@ spec:
                 value: "/workspace/data"
               - name: WORKSPACE
                 value: "/workspace"
+              - name: NUMBA_CACHE_DIR
+                value: "/tmp/cache"
           resources:
             limits: &resources
               nvidia.com/gpu: "1"
@@ -27,6 +29,8 @@ spec:
           volumeMounts:
               - mountPath: /workspace/data # directory IN the container
                 name: &ceph_mount_name localdir # matches volume-name from below
+              # - mountPath: /workspace/runs # directory IN the container
+              #   name: &ceph_mount_name localdir # matches volume-name from below
               - mountPath: /dev/shm # fixes a common pytorch issue. just always mount this here
                 name: dshm
       imagePullSecrets:
