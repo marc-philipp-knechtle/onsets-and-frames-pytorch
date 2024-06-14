@@ -17,8 +17,8 @@ spec:
                 value: "/workspace/data"
               - name: WORKSPACE
                 value: "/workspace"
-              - name: NUMBA_CACHE_DIR
-                value: "/tmp/cache"
+              # - name: NUMBA_CACHE_DIR
+              #   value: "/workspace/cache"
           resources:
             limits: &resources
               nvidia.com/gpu: "1"

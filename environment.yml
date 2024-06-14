@@ -1,6 +1,7 @@
 name: onsets-and-frames-pytorch
 channels:
   - defaults
+  - conda-forge # necessary because of librosa requirement below (instead of librosa beeing installed via pip)
 dependencies:
   - _libgcc_mutex=0.1=main
   - _openmp_mutex=5.1=1_gnu
@@ -9,6 +10,9 @@ dependencies:
   - libffi=3.4.4=h6a678d5_0
   - libgcc-ng=11.2.0=h1234567_1
   - libgomp=11.2.0=h1234567_1
+  - librosa=0.8.0
+  - numba
+  # - librosa
   - libstdcxx-ng=11.2.0=h1234567_1
   - ncurses=6.4=h6a678d5_0
   - openssl=1.1.1w=h7f8727e_0
@@ -41,13 +45,13 @@ dependencies:
     - importlib-metadata==1.7.0
     - joblib==0.16.0
     - jsonpickle==0.9.6
-    - librosa==0.8.0
+    # - librosa==0.7.2
     - llvmlite==0.34.0
     - markdown==3.2.2
     - mido==1.2.9
     - mir-eval==0.6
     - munch==2.5.0
-    - numba==0.51.2
+#     - numba==0.51.2
     - numpy==1.19.1
     - oauthlib==3.1.0
     - packaging==20.4
