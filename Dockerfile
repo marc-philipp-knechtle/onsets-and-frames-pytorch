@@ -14,6 +14,11 @@ COPY onsets_and_frames onsets_and_frames/
 COPY train.py .
 COPY evaluate.py .
 
+# RUN mkdir /workspace/data/cache
+# RUN export NUMBA_CACHE_DIR=/workspace/cache
+# RUN chown root $NUMBA_CACHE_DIR
+# RUN mkdir /workspace/runs
+
 # Testing if the container has all dependencies
 RUN conda run -n onsets-and-frames-pytorch python3 -c "import torch"
 
