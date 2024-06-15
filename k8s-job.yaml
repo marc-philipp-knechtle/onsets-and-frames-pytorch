@@ -6,8 +6,16 @@ spec:
   template:
     spec:
       priorityClassName: research-low
-      # nodeSelector:
-      #     gputype: gtx1080ti
+      affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: gputype
+                  operator: In
+                  values:
+                  - rtx2018ti
+                  - titan
       containers:
         - name: *jobname # gets read as "test-job" as it links to the variable definition above
           image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-pytorch:0.0.1
@@ -17,11 +25,11 @@ spec:
                 value: "/workspace/data"
               - name: WORKSPACE
                 value: "/workspace"
-              # - name: NUMBA_CACHE_DIR
-              #   value: "/workspace/cache"
+              - name: NUMBA_CACHE_DIR
+                value: "/tmp/numba_cache"
           resources:
             limits: &resources
-              nvidia.com/gpu: "1"
+              nvidia.com/gpu: "2"
               cpu: "16"
               memory: "32Gi"
             requests: *resources # sets requests = limits
@@ -29,8 +37,8 @@ spec:
           volumeMounts:
               - mountPath: /workspace/data # directory IN the container
                 name: &ceph_mount_name localdir # matches volume-name from below
-              # - mountPath: /workspace/runs # directory IN the container
-              #   name: &ceph_mount_name localdir # matches volume-name from below
+              - mountPath: /workspace/runs # directory IN the container
+                name: &ceph_runs localdir2 # matches volume-name from below
               - mountPath: /dev/shm # fixes a common pytorch issue. just always mount this here
                 name: dshm
       imagePullSecrets:
@@ -45,9 +53,20 @@ spec:
                     - 132.187.14.19
                     - 132.187.14.20  # Not important for you, just copy along
                 user: extch1  # <namespace>
-                path: "/home/ext/ch1" # The path you want to mount
+                path: "/home/ext/ch1/cluster1/data" # The path you want to mount
                 secretRef: # The name of the secret for auth. Is always "ceph-secret"
                   name: ceph-secret
+          - name: *ceph_runs # gets evaluated as "localdir"
+            cephfs:
+                monitors:
+                    - 132.187.14.16
+                    - 132.187.14.17
+                    - 132.187.14.19
+                    - 132.187.14.20  # Not important for you, just copy along
+                user: extch1  # <namespace>
+                path: "/home/ext/ch1/cluster1/runs" # The path you want to mount
+                secretRef: # The name of the secret for auth. Is always "ceph-secret"
+                    name: ceph-secret
           - name: dshm # "needs" to be copied along, see above
             emptyDir:
                 medium: "Memory"
