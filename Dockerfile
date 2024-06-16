@@ -18,6 +18,9 @@ RUN apt-get update && \
     apt-get install -y \
     libsndfile1-dev # this is required for the python package soundfile
 
+# duplicate to the pytorch dockerfile definition (just as a reminder)
+WORKDIR /workspace
+
 RUN conda env create -f environment.yml
 # Make RUN commands use the new environment
 SHELL ["conda", "run", "-n", "onsets-and-frames-pytorch", "/bin/bash", "-c"]
