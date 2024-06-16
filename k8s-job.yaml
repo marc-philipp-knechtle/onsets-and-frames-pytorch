@@ -6,16 +6,18 @@ spec:
   template:
     spec:
       priorityClassName: research-low
-      affinity:
-          nodeAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-              - matchExpressions:
-                - key: gputype
-                  operator: In
-                  values:
-                  - rtx2018ti
-                  - titan
+      nodeSelector:
+          gputype: rtx2018ti
+#       affinity:
+#           nodeAffinity:
+#             requiredDuringSchedulingIgnoredDuringExecution:
+#               nodeSelectorTerms:
+#               - matchExpressions:
+#                 - key: gputype
+#                   operator: In
+#                   values:
+#                   - rtx2018ti
+#                   - titan
       containers:
         - name: *jobname # gets read as "test-job" as it links to the variable definition above
           image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-pytorch:0.0.1
@@ -29,7 +31,7 @@ spec:
                 value: "/tmp/numba_cache"
           resources:
             limits: &resources
-              nvidia.com/gpu: "2"
+              nvidia.com/gpu: "1"
               cpu: "16"
               memory: "32Gi"
             requests: *resources # sets requests = limits
