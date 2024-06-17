@@ -5,7 +5,7 @@ metadata:
 spec:
   template:
     spec:
-      priorityClassName: research-low
+      priorityClassName: research-med
       nodeSelector:
           gputype: rtx2018ti
 #       affinity:
