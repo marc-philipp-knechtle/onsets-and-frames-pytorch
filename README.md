@@ -19,6 +19,10 @@ This project is quite resource-intensive; 32 GB or larger system memory and 8 GB
 To simplify recreation, we provide an `environment.yml` for conda.
 It might need some editing for the `name` and `prefix` values.
 
+There is also a python virtual environment with the corresponding `requirements.txt`. This was mainly used for docker 
+testing. I assume that some of the cuda memory issues originate from the use of conda, but I have to further verify 
+this.
+
 ```bash
 conda env create -f environment.yml
 ```
