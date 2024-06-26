@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 def parse_midi(path: str) -> np.ndarray:
     """open midi file and return np.array of (onset, offset, note, velocity) rows"""
+    # todo, it might be necessary to extend this method to include the parsing of the vocal data etc.
     midi = mido.MidiFile(path)
 
     time = 0

@@ -1,9 +1,12 @@
 import json
+import logging
 import os
+import re
 from abc import abstractmethod
 from glob import glob
 from typing import List, Tuple
 
+import librosa
 import numpy as np
 import soundfile
 from torch.utils.data import Dataset
@@ -25,7 +28,9 @@ class PianoRollAudioDataset(Dataset):
         print(f"Loading {len(groups)} group{'s' if len(groups) > 1 else ''} "
               f"of {self.__class__.__name__} at {path}")
         for group in groups:
+            input_files: Tuple
             for input_files in tqdm(self.files(group), desc='Loading group %s' % group):
+                # the asterisk means that the data is unpacked (Tuple is unpacked into function arguments)
                 self.data.append(self.load(*input_files))
 
     def __getitem__(self, index):
@@ -96,8 +101,15 @@ class PianoRollAudioDataset(Dataset):
         if os.path.exists(saved_data_path):
             return torch.load(saved_data_path)
 
+        audio: np.ndarray
         audio, sr = soundfile.read(audio_path, dtype='int16')
-        assert sr == SAMPLE_RATE
+        # Conversion to fload see:
+        # https://stackoverflow.com/questions/58810035/converting-audio-files-between-pydub-and-librosa
+        audio = np.array(audio).astype(np.float32)
+        if sr != SAMPLE_RATE:
+            logging.debug(f"Sample Rate Mismatch: resampling file: {audio_path}")
+            audio = librosa.resample(audio, sr, SAMPLE_RATE)
+            sr = SAMPLE_RATE
 
         audio = torch.ShortTensor(audio)
         audio_length = len(audio)
@@ -187,7 +199,7 @@ class MAPS(PianoRollAudioDataset):
         return ['AkPnBcht', 'AkPnBsdf', 'AkPnCGdD', 'AkPnStgb', 'ENSTDkAm', 'ENSTDkCl', 'SptkBGAm', 'SptkBGCl',
                 'StbgTGd2']
 
-    def files(self, group):
+    def files(self, group) -> List[Tuple]:
         flacs = glob(os.path.join(self.path, 'flac', '*_%s.flac' % group))
         tsvs = [f.replace('/flac/', '/tsv/matched/').replace('.flac', '.tsv') for f in flacs]
 
@@ -195,3 +207,101 @@ class MAPS(PianoRollAudioDataset):
         assert (all(os.path.isfile(tsv) for tsv in tsvs))
 
         return sorted(zip(flacs, tsvs))
+
+
+class SchubertWinterreiseDataset(PianoRollAudioDataset):
+    r"""
+    Goal: train Onsets and Frames on Schubert Winterreise data:
+    Issues: We don't have one midi file assigned to a raw audio. We have a general score level midi file
+            Therefore, we can't just use the midi file and the raw audio for training.
+    Further Information:
+            We have different types of measurements, especially the ann_audio_measure measurement
+            Therefore, we can align these measurements with the midi -> warping the midi to match the measurement
+    Solution:   Using the annotations to match midi with the raw data
+                e.g. use ann_audio_measure -> Warp each measure
+                another option: ann_audio_structure
+    """
+
+    def __init__(self,
+                 path='data/Schubert_Winterreise_Dataset_v1-0', groups=None, sequence_length=None, seed=42,
+                 device=DEFAULT_DEVICE):
+        super().__init__(path,
+                         groups if groups is not None else ['AL98', 'FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
+                         sequence_length, seed, device)
+
+    @staticmethod
+    def get_filenames_from_group(directory: str, regex_pattern) -> List[str]:
+        files = glob(os.path.join(directory, '*.wav'))
+        matching_files = [file for file in files if re.compile(fr".*{re.escape(regex_pattern)}.*").search(file)]
+        return matching_files
+
+    @staticmethod
+    def combine_audio_midi(audio_filenames: List[str], midi_filenames: List[str]) -> List[Tuple]:
+        """
+        todo reformat docstring
+        This is intended as the method which finally does the warping of the Schubert Midi files
+        Args:
+            audio_filenames:
+            midi_filenames:
+
+        Returns:
+
+        """
+        audio_midi_combination: List[Tuple] = []
+        for audio_filename in audio_filenames:
+            basename = os.path.basename(audio_filename)
+            # get number of piece
+            number_str: str = basename[14:16]
+            # Find matching midi file
+            matching_files = [midi_file for midi_file in midi_filenames if
+                              re.compile(fr".*-{number_str}.*").search(midi_file)]
+            if len(matching_files) > 1:
+                raise RuntimeError(f"Found more than one matching file for audio filename: {audio_filename}")
+            midi_filepath: str = matching_files[0]
+            # Create tuple
+            audio_midi_combination.append((os.path.basename(audio_filename), os.path.basename(midi_filepath)))
+        return audio_midi_combination
+
+    @classmethod
+    def available_groups(cls) -> List[str]:
+        r"""
+        HU33, SC06 are the public datasets -> these are used preferred for testing
+        Returns: Available groups
+        """
+        return ['AL98', 'FI55', 'FI66', 'FI80', 'HU33', 'OL06', 'QU98', 'SC06', 'TR99']
+
+    def files(self, group: str) -> List[Tuple]:
+        """
+        # todo change setting default type of docstring
+        Args:
+            group:
+
+        Returns:
+
+        """
+        audio_filenames: List[str] = []
+        # This is List of Tuples containing the midi/audio combination for each file
+        files: List[Tuple] = []
+
+        # for each group get the files
+        # todo adding some form of handling wav and flac filenames
+        audio_filenames.extend(
+            self.get_filenames_from_group(os.path.join(self.path, '01_RawData', 'audio_wav'), group))
+
+        midi_filenames: List[str] = glob(os.path.join(self.path, '01_RawData', 'score_midi', '*.mid'))
+
+        files = self.combine_audio_midi(audio_filenames, midi_filenames)
+
+        result: List[Tuple] = []
+        audio_filename: str
+        midi_filename: str
+        tsv_dir: str = os.path.join(self.path, '01_RawData', 'score_tsv')
+        for audio_filename, midi_filename in files:
+            tsv_filename = midi_filename.replace('.mid', '.tsv').replace('.midi', '.tsv')
+            if not os.path.exists(os.path.join(tsv_dir, tsv_filename)):
+                midi: np.ndarray = parse_midi(os.path.join(self.path, '01_RawData', 'score_midi', midi_filename))
+                np.savetxt(os.path.join(tsv_dir, tsv_filename), midi, fmt='%.6f', delimiter='\t',
+                           header='onset,offset,note,velocity')
+            result.append((os.path.join(self.path, '01_RawData', 'audio_wav', audio_filename),
+                           os.path.join(tsv_dir, tsv_filename)))
+        return result

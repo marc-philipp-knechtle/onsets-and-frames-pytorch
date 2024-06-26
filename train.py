@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from evaluate import evaluate
 from onsets_and_frames import *
-from onsets_and_frames.dataset import PianoRollAudioDataset
+from onsets_and_frames.dataset import PianoRollAudioDataset, SchubertWinterreiseDataset
 
 ex = Experiment('train_transcriber')
 
@@ -71,9 +71,22 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
         validation_groups = [str(leave_one_out)]
 
     dataset_training: PianoRollAudioDataset
+    validation_dataset: PianoRollAudioDataset
     if train_on == 'MAESTRO':
         dataset_training = MAESTRO(groups=train_groups, sequence_length=sequence_length)
         validation_dataset = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
+    elif train_on == 'Winterreise':
+        # todo define train groups here (Like lele described in her message)
+        # HU33 and SC06 are intended for testing
+        dataset_training = SchubertWinterreiseDataset(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QUI98', 'TR99'],
+                                                      sequence_length=sequence_length)
+        validation_dataset = SchubertWinterreiseDataset(groups=['AL98'], sequence_length=sequence_length)
+    elif train_on == 'MAESTRO+Winterreise':
+        dataset_training = None
+        validation_dataset = None
+    elif train_on == 'all':
+        dataset_training = None
+        validation_dataset = None
     else:
         dataset_training = MAPS(
             groups=['AkPnBcht', 'AkPnBsdf', 'AkPnCGdD', 'AkPnStgb', 'SptkBGAm', 'SptkBGCl', 'StbgTGd2'],
