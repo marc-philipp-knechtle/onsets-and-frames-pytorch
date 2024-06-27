@@ -296,6 +296,8 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         audio_filename: str
         midi_filename: str
         tsv_dir: str = os.path.join(self.path, '01_RawData', 'score_tsv')
+        if not os.path.exists(tsv_dir):
+            os.makedirs(tsv_dir)
         for audio_filename, midi_filename in files:
             tsv_filename = midi_filename.replace('.mid', '.tsv').replace('.midi', '.tsv')
             if not os.path.exists(os.path.join(tsv_dir, tsv_filename)):
