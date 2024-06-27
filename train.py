@@ -8,7 +8,7 @@ from sacred.commands import print_config
 from sacred.observers import FileStorageObserver
 from torch.nn.utils import clip_grad_norm_
 from torch.optim.lr_scheduler import StepLR
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, ConcatDataset, Dataset
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
@@ -65,8 +65,8 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
         all_years = {'2004', '2006', '2008', '2009', '2011', '2013', '2014', '2015', '2017'}
         train_groups = list(all_years - {str(leave_one_out)})
         validation_groups = [str(leave_one_out)]
-    dataset_training: PianoRollAudioDataset
-    validation_dataset: PianoRollAudioDataset
+    dataset_training: Dataset
+    validation_dataset: Dataset
     if train_on == 'MAESTRO':
         dataset_training = MAESTRO(groups=train_groups, sequence_length=sequence_length)
         validation_dataset = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
@@ -76,9 +76,15 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
                                                       sequence_length=sequence_length)
         validation_dataset = SchubertWinterreiseDataset(groups=['AL98'], sequence_length=sequence_length)
     elif train_on == 'MAESTRO+Winterreise':
-        dataset_training = None
-        validation_dataset = None
+        maestro_training = MAESTRO(groups=train_groups, sequence_length=sequence_length)
+        maestro_validation = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
+        winterreise_training = SchubertWinterreiseDataset(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QUI98', 'TR99'],
+                                                          sequence_length=sequence_length)
+        winterreise_validation = SchubertWinterreiseDataset(groups=['AL98'], sequence_length=sequence_length)
+        dataset_training = ConcatDataset([maestro_training, winterreise_training])
+        validation_dataset = ConcatDataset([maestro_validation, winterreise_validation])
     elif train_on == 'all':
+        # todo
         dataset_training = None
         validation_dataset = None
     else:
