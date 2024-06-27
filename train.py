@@ -71,8 +71,7 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
         dataset_training = MAESTRO(groups=train_groups, sequence_length=sequence_length)
         validation_dataset = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
     elif train_on == 'Winterreise':
-        # todo define train groups here (Like lele described in her message)
-        # HU33 and SC06 are intended for testing
+        # HU33 and SC06 are intended for testing because they are the public ones
         dataset_training = SchubertWinterreiseDataset(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QUI98', 'TR99'],
                                                       sequence_length=sequence_length)
         validation_dataset = SchubertWinterreiseDataset(groups=['AL98'], sequence_length=sequence_length)
