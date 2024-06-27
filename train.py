@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import datetime
 
 import numpy as np
@@ -54,22 +55,16 @@ def config():
     ex.observers.append(FileStorageObserver.create(logdir))
 
 
-@ex.automain
-def train(logdir, device, iterations, resume_iteration, checkpoint_interval, train_on, batch_size, sequence_length,
-          model_complexity, learning_rate, learning_rate_decay_steps, learning_rate_decay_rate, leave_one_out,
-          clip_gradient_norm, validation_length, validation_interval):
-    print_config(ex.current_run)
-
-    os.makedirs(logdir, exist_ok=True)
-    writer = SummaryWriter(logdir)
-
+def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_norm: int,
+                     device: str, iterations: int, learning_rate: float, learning_rate_decay_rate: float,
+                     learning_rate_decay_steps: int, leave_one_out: bool, logdir: str, model_complexity: int,
+                     resume_iteration: bool, sequence_length: int, train_on: str, validation_interval: int,
+                     validation_length: int, writer: SummaryWriter, ):
     train_groups, validation_groups = ['train'], ['validation']
-
     if leave_one_out is not None:
         all_years = {'2004', '2006', '2008', '2009', '2011', '2013', '2014', '2015', '2017'}
         train_groups = list(all_years - {str(leave_one_out)})
         validation_groups = [str(leave_one_out)]
-
     dataset_training: PianoRollAudioDataset
     validation_dataset: PianoRollAudioDataset
     if train_on == 'MAESTRO':
@@ -92,9 +87,7 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
             groups=['AkPnBcht', 'AkPnBsdf', 'AkPnCGdD', 'AkPnStgb', 'SptkBGAm', 'SptkBGCl', 'StbgTGd2'],
             sequence_length=sequence_length)
         validation_dataset = MAPS(groups=['ENSTDkAm', 'ENSTDkCl'], sequence_length=validation_length)
-
     loader = DataLoader(dataset_training, batch_size, shuffle=True, drop_last=True)
-
     if resume_iteration is None:
         model = OnsetsAndFrames(N_MELS, MAX_MIDI - MIN_MIDI + 1, model_complexity).to(device)
         optimizer = torch.optim.Adam(model.parameters(), learning_rate)
@@ -104,10 +97,8 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
         model = torch.load(model_path)
         optimizer = torch.optim.Adam(model.parameters(), learning_rate)
         optimizer.load_state_dict(torch.load(os.path.join(logdir, 'last-optimizer-state.pt')))
-
     summary(model)
     scheduler = StepLR(optimizer, step_size=learning_rate_decay_steps, gamma=learning_rate_decay_rate)
-
     loop = tqdm(range(resume_iteration + 1, iterations + 1))
     for i, batch in zip(loop, cycle(loader)):
         predictions, losses = model.run_on_batch(batch)
@@ -134,3 +125,21 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
         if i % checkpoint_interval == 0:
             torch.save(model, os.path.join(logdir, f'model-{i}.pt'))
             torch.save(optimizer.state_dict(), os.path.join(logdir, 'last-optimizer-state.pt'))
+
+
+@ex.automain
+def train(logdir, device, iterations, resume_iteration, checkpoint_interval, train_on, batch_size, sequence_length,
+          model_complexity, learning_rate, learning_rate_decay_steps, learning_rate_decay_rate, leave_one_out,
+          clip_gradient_norm, validation_length, validation_interval):
+    print_config(ex.current_run)
+
+    os.makedirs(logdir, exist_ok=True)
+    writer = SummaryWriter(logdir)
+
+    try:
+        training_process(batch_size, checkpoint_interval, clip_gradient_norm, device, iterations, learning_rate,
+                         learning_rate_decay_rate, learning_rate_decay_steps, leave_one_out, logdir, model_complexity,
+                         resume_iteration, sequence_length, train_on, validation_interval, validation_length, writer)
+    except Exception as e:
+        writer.add_text('train/error', str(e))
+        print(str(e), file=sys.stderr)
