@@ -5,9 +5,13 @@ metadata:
 spec:
   template:
     spec:
-      priorityClassName: research-med
-      nodeSelector:
-          gputype: rtx2018ti
+      priorityClassName: research-low
+      # tested this node selector, however, after 10 days is was not possible to get a node with rtx2018ti :(
+          # I ran this with the research med priority...
+          # Therefore it might be required to run this with research-high
+          # Todo test if sth. changed after the restart of the cluster...
+      # nodeSelector:
+      #     gputype: rtx2018ti
 #       affinity:
 #           nodeAffinity:
 #             requiredDuringSchedulingIgnoredDuringExecution:

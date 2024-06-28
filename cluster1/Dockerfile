@@ -10,7 +10,7 @@
 # -> same error as above
 FROM pytorch/pytorch:1.11.0-cuda11.3-cudnn8-runtime
 
-COPY ./environment.yml .
+COPY ../environment.yml .
 
 # Required because of issue with prompt asking for geographic location
 ARG DEBIAN_FRONTEND=noninteractive
@@ -25,9 +25,10 @@ RUN conda env create -f environment.yml
 # Make RUN commands use the new environment
 SHELL ["conda", "run", "-n", "onsets-and-frames-pytorch", "/bin/bash", "-c"]
 
-COPY onsets_and_frames onsets_and_frames/
+COPY onsets_and_frames onsets_and_frames
 COPY train.py .
 COPY evaluate.py .
+
 
 # RUN mkdir /workspace/data/cache
 # RUN export NUMBA_CACHE_DIR=/workspace/cache
