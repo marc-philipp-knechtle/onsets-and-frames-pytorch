@@ -1,6 +1,7 @@
 import os
 import sys
 from datetime import datetime
+from typing import List, Tuple
 
 import numpy as np
 from sacred import Experiment
@@ -55,16 +56,8 @@ def config():
     ex.observers.append(FileStorageObserver.create(logdir))
 
 
-def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_norm: int,
-                     device: str, iterations: int, learning_rate: float, learning_rate_decay_rate: float,
-                     learning_rate_decay_steps: int, leave_one_out: bool, logdir: str, model_complexity: int,
-                     resume_iteration: bool, sequence_length: int, train_on: str, validation_interval: int,
-                     validation_length: int, writer: SummaryWriter, ):
-    train_groups, validation_groups = ['train'], ['validation']
-    if leave_one_out is not None:
-        all_years = {'2004', '2006', '2008', '2009', '2011', '2013', '2014', '2015', '2017'}
-        train_groups = list(all_years - {str(leave_one_out)})
-        validation_groups = [str(leave_one_out)]
+def create_datasets(sequence_length: int, train_groups: List[str], train_on: str, validation_groups: List[str],
+                    validation_length: int) -> Tuple[Dataset, Dataset]:
     dataset_training: Dataset
     validation_dataset: Dataset
     if train_on == 'MAESTRO':
@@ -92,6 +85,21 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
             groups=['AkPnBcht', 'AkPnBsdf', 'AkPnCGdD', 'AkPnStgb', 'SptkBGAm', 'SptkBGCl', 'StbgTGd2'],
             sequence_length=sequence_length)
         validation_dataset = MAPS(groups=['ENSTDkAm', 'ENSTDkCl'], sequence_length=validation_length)
+    return dataset_training, validation_dataset
+
+
+def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_norm: int,
+                     device: str, iterations: int, learning_rate: float, learning_rate_decay_rate: float,
+                     learning_rate_decay_steps: int, leave_one_out: bool, logdir: str, model_complexity: int,
+                     resume_iteration: bool, sequence_length: int, train_on: str, validation_interval: int,
+                     validation_length: int, writer: SummaryWriter, ):
+    train_groups, validation_groups = ['train'], ['validation']
+    if leave_one_out is not None:
+        all_years = {'2004', '2006', '2008', '2009', '2011', '2013', '2014', '2015', '2017'}
+        train_groups = list(all_years - {str(leave_one_out)})
+        validation_groups = [str(leave_one_out)]
+    dataset_training, validation_dataset = create_datasets(sequence_length, train_groups, train_on, validation_groups,
+                                                           validation_length)
     loader = DataLoader(dataset_training, batch_size, shuffle=True, drop_last=True)
     if resume_iteration is None:
         model = OnsetsAndFrames(N_MELS, MAX_MIDI - MIN_MIDI + 1, model_complexity).to(device)
