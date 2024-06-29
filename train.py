@@ -147,4 +147,5 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
                          resume_iteration, sequence_length, train_on, validation_interval, validation_length, writer)
     except Exception as e:
         writer.add_text('train/error', str(e))
+        print(e)
         print(str(e), file=sys.stderr)
