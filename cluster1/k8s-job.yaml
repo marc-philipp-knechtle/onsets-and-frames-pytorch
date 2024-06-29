@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: &jobname onsets-and-frames-pytorch-training # this is an arbitrary name for the local container
+  name: &jobname onsets-and-frames-pytorch-training-cluster1 # this is an arbitrary name for the local container
 spec:
   template:
     spec:
@@ -12,16 +12,19 @@ spec:
           # Todo test if sth. changed after the restart of the cluster...
       # nodeSelector:
       #     gputype: rtx2018ti
-#       affinity:
-#           nodeAffinity:
-#             requiredDuringSchedulingIgnoredDuringExecution:
-#               nodeSelectorTerms:
-#               - matchExpressions:
-#                 - key: gputype
-#                   operator: In
-#                   values:
-#                   - rtx2018ti
-#                   - titan
+      affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: gputype
+                  operator: In
+                  values:
+                  - gtx1080ti
+                  - rtx2018ti
+                  - titan
+                  - rtx8000
+                  - a100
       containers:
         - name: *jobname # gets read as "test-job" as it links to the variable definition above
           image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-pytorch:0.0.1

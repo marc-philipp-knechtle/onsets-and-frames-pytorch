@@ -1,5 +1,5 @@
 # kubectl delete all --all -n extch1
-kubectl delete job onsets-and-frames-pytorch-training
+kubectl delete job onsets-and-frames-pytorch-training-cluster1
 
 
 export NAME=ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-pytorch:0.0.1
