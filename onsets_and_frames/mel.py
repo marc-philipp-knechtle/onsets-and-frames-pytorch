@@ -10,6 +10,7 @@ from .constants import *
 
 class STFT(torch.nn.Module):
     """adapted from Prem Seetharaman's https://github.com/pseeth/pytorch-stft"""
+
     def __init__(self, filter_length, hop_length, win_length=None, window='hann'):
         super(STFT, self).__init__()
         if win_length is None:
@@ -29,7 +30,7 @@ class STFT(torch.nn.Module):
         forward_basis = torch.FloatTensor(fourier_basis[:, None, :])
 
         if window is not None:
-            assert(filter_length >= win_length)
+            assert (filter_length >= win_length)
             # get window and zero center pad it to filter_length
             fft_window = get_window(window, win_length, fftbins=True)
             fft_window = pad_center(fft_window, filter_length)
@@ -62,7 +63,7 @@ class STFT(torch.nn.Module):
         real_part = forward_transform[:, :cutoff, :]
         imag_part = forward_transform[:, cutoff:, :]
 
-        magnitude = torch.sqrt(real_part**2 + imag_part**2)
+        magnitude = torch.sqrt(real_part ** 2 + imag_part ** 2)
         phase = torch.autograd.Variable(torch.atan2(imag_part.data, real_part.data))
 
         return magnitude, phase
@@ -87,8 +88,8 @@ class MelSpectrogram(torch.nn.Module):
         -------
         mel_output: torch.FloatTensor of shape (B, T, n_mels)
         """
-        assert(torch.min(y.data) >= -1)
-        assert(torch.max(y.data) <= 1)
+        assert (torch.min(y.data) >= -1)
+        assert (torch.max(y.data) <= 1)
 
         magnitudes, phases = self.stft(y)
         magnitudes = magnitudes.data
