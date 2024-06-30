@@ -10,14 +10,14 @@ from mir_eval.transcription_velocity import precision_recall_f1_overlap as evalu
 from mir_eval.util import midi_to_hz
 from scipy.stats import hmean
 from tqdm import tqdm
-
+from torch.utils.data import Dataset
 import onsets_and_frames.dataset as dataset_module
 from onsets_and_frames import *
 
 eps = sys.float_info.epsilon
 
 
-def evaluate(data, model, onset_threshold=0.5, frame_threshold=0.5, save_path=None):
+def evaluate(data: Dataset, model: OnsetsAndFrames, onset_threshold=0.5, frame_threshold=0.5, save_path=None):
     metrics = defaultdict(list)
 
     for label in data:
