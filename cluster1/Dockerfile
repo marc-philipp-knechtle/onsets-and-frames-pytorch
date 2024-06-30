@@ -8,7 +8,35 @@
 # Therefore trying to switch to a different pytorch cuda version combination
 # FROM pytorch/pytorch:2.1.1-cuda12.1-cudnn8-runtime
 # -> same error as above
-FROM pytorch/pytorch:1.11.0-cuda11.3-cudnn8-runtime
+# FROM pytorch/pytorch:1.11.0-cuda11.3-cudnn8-runtime
+# Error: RuntimeError: cuDNN error: CUDNN_STATUS_EXECUTION_FAILED
+# FROM pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime
+# # Error: RuntimeError: cuDNN error: CUDNN_STATUS_EXECUTION_FAILED
+FROM pytorch/pytorch:1.9.0-cuda10.2-cudnn7-runtime
+# FROM pytorch/pytorch:1.9.1-cuda11.1-cudnn8-runtime
+## >>>>>>>>>>>>>>>>>>>>>> ERROR REPORT <<<<<<<<<<<<<<<<<<<<<<
+#
+#    Traceback (most recent call last):
+#      File "/opt/conda/lib/python3.7/site-packages/conda/exceptions.py", line 1079, in __call__
+#        return func(*args, **kwargs)
+#      File "/opt/conda/lib/python3.7/site-packages/conda/cli/main.py", line 84, in _main
+#        exit_code = do_call(args, p)
+#      File "/opt/conda/lib/python3.7/site-packages/conda/cli/conda_argparse.py", line 83, in do_call
+#        return getattr(module, func_name)(args, parser)
+#      File "/opt/conda/lib/python3.7/site-packages/conda/cli/main_run.py", line 26, in execute
+#        args.dev, args.debug_wrapper_scripts, call)
+#      File "/opt/conda/lib/python3.7/site-packages/conda/utils.py", line 403, in wrap_subprocess_call
+#        with Utf8NamedTemporaryFile(mode='w', prefix=tmp_prefix, delete=False) as fh:
+#      File "/opt/conda/lib/python3.7/site-packages/conda/_vendor/auxlib/compat.py", line 83, in Utf8NamedTemporaryFile
+#        dir=dir, delete=delete)
+#      File "/opt/conda/lib/python3.7/tempfile.py", line 547, in NamedTemporaryFile
+#        (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
+#      File "/opt/conda/lib/python3.7/tempfile.py", line 258, in _mkstemp_inner
+#        fd = _os.open(file, flags, 0o600)
+#    PermissionError: [Errno 13] Permission denied: '/opt/conda/envs/onsets-and-frames-pytorch/.tmp6xy4jja_'
+#
+#`$ /opt/conda/bin/conda run -n onsets-and-frames-pytorch python3 train.py`
+
 
 COPY ../environment.yml .
 
