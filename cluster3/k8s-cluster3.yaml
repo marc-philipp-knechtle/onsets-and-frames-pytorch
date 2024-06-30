@@ -5,7 +5,7 @@ metadata:
 spec:
   template:
     spec:
-      priorityClassName: research-low
+      priorityClassName: research-med
       containers:
         - name: *jobname # gets read as "test-job" as it links to the variable definition above
           image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-cluster3:0.0.1
@@ -23,7 +23,7 @@ spec:
               cpu: "16"
               memory: "32Gi"
             requests: *resources # sets requests = limits
-          command: ["python3", "train.py", "with", "train_on=MAESTRO+Winterreise"]
+          command: ["python3", "train.py", "with", "train_on=MAESTRO+Winterreise", "resume_iteration=192000", "logdir=runs/transcriber-240628-164419"]
           # This command was used for debugging of the pods (infinite sleeping)
           # command: ["/bin/bash", "-c", "--"]
           # args: [ "while true; do sleep 30; done;" ]
@@ -36,6 +36,8 @@ spec:
                 name: dshm
       imagePullSecrets:
         - name: lsx-registry
+      # restart Policy works in conjunction with backOffLimit. The restartPolicy is on the Level of individual Pods.
+      # Therefore the pods are not restarted, however new pods are craeted.
       restartPolicy: "Never"
       volumes:
           - name: *ceph_data
@@ -63,3 +65,5 @@ spec:
           - name: dshm # "needs" to be copied along, see above
             emptyDir:
                 medium: "Memory"
+  # avoid retries because I can manually specify that the pod is restarted after some time
+  backoffLimit: 0
