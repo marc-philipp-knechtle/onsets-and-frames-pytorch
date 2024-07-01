@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+import os.path
 import sys
 from typing import Tuple, List
 
@@ -7,6 +8,8 @@ import mido
 import pretty_midi
 import numpy as np
 import collections
+
+import scipy.io.wavfile
 from joblib import Parallel, delayed
 from mir_eval.util import hz_to_midi
 from tqdm import tqdm
@@ -56,7 +59,7 @@ def parse_midi(path: str) -> np.ndarray:
     return np.array(notes)
 
 
-def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities) -> pretty_midi.PrettyMIDI:
+def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities):
     """
     Save extracted notes as a MIDI file
     Parameters
@@ -75,14 +78,17 @@ def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities)
 
     check_pitch_time_intervals(intervals_dict)
 
-    piano = create_piano_midi(intervals_dict, pitches, velocities)
+    piano: pretty_midi.Instrument = create_piano_midi(intervals_dict, pitches, velocities)
 
-    file = pretty_midi.PrettyMIDI()
+    file: pretty_midi.PrettyMIDI = pretty_midi.PrettyMIDI()
     file.instruments.append(piano)
+    audio_data: np.ndarray = file.synthesize()
+    scipy.io.wavfile.write(os.path.join(os.path.dirname(path), os.path.basename(path) + '.wav'), 44100,
+                           audio_data)
     file.write(path)
 
 
-def create_piano_midi(intervals_dict, pitches, velocities):
+def create_piano_midi(intervals_dict, pitches, velocities) -> pretty_midi.Instrument:
     piano_program = pretty_midi.instrument_name_to_program('Acoustic Grand Piano')
     piano = pretty_midi.Instrument(program=piano_program)
     for pitch in intervals_dict:
