@@ -83,6 +83,8 @@ def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities)
     file: pretty_midi.PrettyMIDI = pretty_midi.PrettyMIDI()
     file.instruments.append(piano)
     audio_data: np.ndarray = file.synthesize()
+    # todo replace this with an implementation of pyfluidsynth
+    #  (which can use other sounds compared to the default sine wave)
     scipy.io.wavfile.write(os.path.join(os.path.dirname(path), os.path.basename(path) + '.wav'), 44100,
                            audio_data)
     file.write(path)
