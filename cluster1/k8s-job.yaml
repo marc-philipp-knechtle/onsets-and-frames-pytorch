@@ -22,7 +22,7 @@ spec:
                   values:
                   - gtx1080ti
                   - rtx2018ti
-                  - titan
+                  # - titan  To avoid node 'ungoliant' because of error msg: Pod The node had condition: [DiskPressure].
                   - rtx8000
                   - a100
       containers:
