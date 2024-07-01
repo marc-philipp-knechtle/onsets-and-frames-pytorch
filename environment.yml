@@ -76,7 +76,9 @@ dependencies:
     - tensorboard==2.3.0
     - tensorboard-plugin-wit==1.7.0
     - threadpoolctl==2.1.0
-    - torch==1.2.0
+    # - torch==1.2.0
+    # This upgrade is necessary because the Docker runs with a later pytorch version
+    - torch == 1.9.1
     - tqdm==4.48.2
     - urllib3==1.25.10
     - werkzeug==1.0.1
