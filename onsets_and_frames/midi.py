@@ -1,3 +1,4 @@
+import logging
 import multiprocessing
 import sys
 from typing import Tuple, List
@@ -111,11 +112,14 @@ def check_pitch_time_intervals(intervals_dict):
         for i in range(len(interval_list) - 1):
             end_current_interval_seconds = interval_list[i][0][1]
             start_next_interval_seconds = interval_list[i + 1][0][0]
-            assert end_current_interval_seconds <= start_next_interval_seconds, \
-                (f'End time should be smaller of equal start time of next note on the same pitch. It was '
-                 f'{interval_list[i][1]}, {interval_list[i + 1][0]} for pitch {pitch}')
-            # This would be only required if the assert statement has some failures
-            # interval_list[i][0][1] = min(interval_list[i][0][1], interval_list[i + 1][0][0])
+            if end_current_interval_seconds >= start_next_interval_seconds:
+                logging.warn(
+                    f'End time should be smaller of equal start time of next note on the same pitch.\n'
+                    f'Current Pitch End: {end_current_interval_seconds}\n'
+                    f'Next pitch Start: {start_next_interval_seconds}\n'
+                    f'Correcting with end of current = '
+                    f'{min(end_current_interval_seconds, start_next_interval_seconds)}')
+                interval_list[i][0][1] = min(end_current_interval_seconds, start_next_interval_seconds)
 
 
 if __name__ == '__main__':
