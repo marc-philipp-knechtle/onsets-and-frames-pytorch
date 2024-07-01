@@ -77,7 +77,8 @@ def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities)
         interval_list = intervals_dict[pitch]
         interval_list.sort(key=lambda x: x[0][0])
         for i in range(len(interval_list) - 1):
-            # assert interval_list[i][1] <= interval_list[i+1][0], f'End time should be smaller of equal start time of next note on the same pitch. It was {interval_list[i][1]}, {interval_list[i+1][0]} for pitch {key}'
+            assert interval_list[i][1] <= interval_list[i + 1][
+                0], f'End time should be smaller of equal start time of next note on the same pitch. It was {interval_list[i][1]}, {interval_list[i + 1][0]} for pitch {key}'
             interval_list[i][0][1] = min(interval_list[i][0][1], interval_list[i + 1][0][0])
 
     for pitch in intervals_dict:
