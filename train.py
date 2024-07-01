@@ -114,30 +114,31 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
     scheduler = StepLR(optimizer, step_size=learning_rate_decay_steps, gamma=learning_rate_decay_rate)
     loop = tqdm(range(resume_iteration + 1, iterations + 1))
     for i, batch in zip(loop, cycle(loader)):
-        predictions, losses = model.run_on_batch(batch)
+        run_iteration(batch, checkpoint_interval, clip_gradient_norm, i, logdir, model, optimizer, scheduler,
+                      validation_dataset, validation_interval, writer)
 
-        loss = sum(losses.values())
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        scheduler.step()
 
-        if clip_gradient_norm:
-            clip_grad_norm_(model.parameters(), clip_gradient_norm)
-
-        for key, value in {'loss': loss, **losses}.items():
-            writer.add_scalar(key, value.item(), global_step=i)
-
-        if i % validation_interval == 0:
-            model.eval()
-            with torch.no_grad():
-                for key, value in evaluate(validation_dataset, model).items():
-                    writer.add_scalar('validation/' + key.replace(' ', '_'), np.mean(value), global_step=i)
-            model.train()
-
-        if i % checkpoint_interval == 0:
-            torch.save(model, os.path.join(logdir, f'model-{i}.pt'))
-            torch.save(optimizer.state_dict(), os.path.join(logdir, 'last-optimizer-state.pt'))
+def run_iteration(batch, checkpoint_interval, clip_gradient_norm, i, logdir, model, optimizer, scheduler,
+                  validation_dataset, validation_interval, writer):
+    predictions, losses = model.run_on_batch(batch)
+    loss = sum(losses.values())
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+    scheduler.step()
+    if clip_gradient_norm:
+        clip_grad_norm_(model.parameters(), clip_gradient_norm)
+    for key, value in {'loss': loss, **losses}.items():
+        writer.add_scalar(key, value.item(), global_step=i)
+    if i % validation_interval == 0:
+        model.eval()
+        with torch.no_grad():
+            for key, value in evaluate(validation_dataset, model).items():
+                writer.add_scalar('validation/' + key.replace(' ', '_'), np.mean(value), global_step=i)
+        model.train()
+    if i % checkpoint_interval == 0:
+        torch.save(model, os.path.join(logdir, f'model-{i}.pt'))
+        torch.save(optimizer.state_dict(), os.path.join(logdir, 'last-optimizer-state.pt'))
 
 
 @ex.automain
