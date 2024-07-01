@@ -1,4 +1,6 @@
 # kubectl delete all --all -n extch1
+echo "THIS DOES NOT WORK! There are various errors while using the conda environment :("
+exit 0
 kubectl delete job onsets-and-frames-pytorch-training-cluster1
 
 
