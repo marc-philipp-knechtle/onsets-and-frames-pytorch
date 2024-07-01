@@ -70,7 +70,7 @@ python evaluate.py runs/model/model-100000.pt --save-path output/
 In order to test on the Maestro dataset's test split instead of the MAPS database, run:
 
 ```bash
-python evaluate.py runs/model/model-100000.pt Maestro test
+python evaluate.py runs/model/model-100000.pt MAESTRO test
 ```
 
 You can download a pretrained model [here](https://drive.google.com/file/d/1Mj2Em07Lvl3mvDQCCxOYHjPiB-S0WGT1/view?usp=sharing) and run `transcribe.py` to transcribe piano audio files:
