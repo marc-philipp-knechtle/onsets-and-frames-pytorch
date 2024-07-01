@@ -1,5 +1,6 @@
 import multiprocessing
 import sys
+from typing import Tuple, List
 
 import mido
 import pretty_midi
@@ -54,7 +55,7 @@ def parse_midi(path: str) -> np.ndarray:
     return np.array(notes)
 
 
-def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities):
+def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities) -> pretty_midi.PrettyMIDI:
     """
     Save extracted notes as a MIDI file
     Parameters
@@ -64,23 +65,25 @@ def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities)
     intervals: list of (onset_index, offset_index)
     velocities: list of velocity values
     """
-    file = pretty_midi.PrettyMIDI()
-    piano_program = pretty_midi.instrument_name_to_program('Acoustic Grand Piano')
-    piano = pretty_midi.Instrument(program=piano_program)
 
     # Remove overlapping intervals (end time should be smaller of equal start time of next note on the same pitch)
     intervals_dict = collections.defaultdict(list)
     for i in range(len(pitches)):
         pitch = int(round(hz_to_midi(pitches[i])))
         intervals_dict[pitch].append((intervals[i], i))
-    for pitch in intervals_dict:
-        interval_list = intervals_dict[pitch]
-        interval_list.sort(key=lambda x: x[0][0])
-        for i in range(len(interval_list) - 1):
-            assert interval_list[i][1] <= interval_list[i + 1][
-                0], f'End time should be smaller of equal start time of next note on the same pitch. It was {interval_list[i][1]}, {interval_list[i + 1][0]} for pitch {key}'
-            interval_list[i][0][1] = min(interval_list[i][0][1], interval_list[i + 1][0][0])
 
+    check_pitch_time_intervals(intervals_dict)
+
+    piano = create_piano_midi(intervals_dict, pitches, velocities)
+
+    file = pretty_midi.PrettyMIDI()
+    file.instruments.append(piano)
+    file.write(path)
+
+
+def create_piano_midi(intervals_dict, pitches, velocities):
+    piano_program = pretty_midi.instrument_name_to_program('Acoustic Grand Piano')
+    piano = pretty_midi.Instrument(program=piano_program)
     for pitch in intervals_dict:
         interval_list = intervals_dict[pitch]
         for interval, i in interval_list:
@@ -92,9 +95,27 @@ def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities)
             velocity = int(127 * min(velocities[i], 1)) if velocities[i] >= 0 else 0
             note = pretty_midi.Note(velocity=velocity, pitch=pitch, start=interval[0], end=interval[1])
             piano.notes.append(note)
+    return piano
 
-    file.instruments.append(piano)
-    file.write(path)
+
+def check_pitch_time_intervals(intervals_dict):
+    pitch: int
+    for pitch in intervals_dict:
+        """
+        Describes the list for a single pitch
+        : List[Tuple(starttime, endtime), bin time: int]
+        I think the bin time refers only to the start, but I'm not sure on this
+        """
+        interval_list: List[Tuple[List[2], int]] = intervals_dict[pitch]
+        interval_list.sort(key=lambda x: x[0][0])
+        for i in range(len(interval_list) - 1):
+            end_current_interval_seconds = interval_list[i][0][1]
+            start_next_interval_seconds = interval_list[i + 1][0][0]
+            assert end_current_interval_seconds <= start_next_interval_seconds, \
+                (f'End time should be smaller of equal start time of next note on the same pitch. It was '
+                 f'{interval_list[i][1]}, {interval_list[i + 1][0]} for pitch {pitch}')
+            # This would be only required if the assert statement has some failures
+            # interval_list[i][0][1] = min(interval_list[i][0][1], interval_list[i + 1][0][0])
 
 
 if __name__ == '__main__':
