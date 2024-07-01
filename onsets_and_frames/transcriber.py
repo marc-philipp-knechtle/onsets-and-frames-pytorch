@@ -124,4 +124,3 @@ class OnsetsAndFrames(nn.Module):
             return denominator
         else:
             return (onset_label * (velocity_label - velocity_pred) ** 2).sum() / denominator
-
