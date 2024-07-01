@@ -1,0 +1,79 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: &jobname onsets-and-frames-evaluation
+spec:
+  template:
+    spec:
+      priorityClassName: research-low
+      containers:
+        - name: *jobname # gets read as "test-job" as it links to the variable definition above
+          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-cluster2:0.0.4
+          imagePullPolicy: "IfNotPresent"
+          env:
+              - name: DATADIR
+                value: "/workspace/data"
+              - name: WORKSPACE
+                value: "/workspace"
+              - name: NUMBA_CACHE_DIR
+                value: "/tmp/numba_cache"
+          resources:
+            limits: &resources
+              nvidia.com/gpu: "1"
+              cpu: "16"
+              memory: "32Gi"
+            requests: *resources # sets requests = limits
+          command: ["python3", "evaluate.py", "runs/model-451000.pt"]
+          # This command was used for debugging of the pods (infinite sleeping)
+          # command: ["/bin/bash", "-c", "--"]
+          # args: [ "while true; do sleep 30; done;" ]
+          volumeMounts:
+              - mountPath: /workspace/data # directory IN the container
+                name: &ceph_data data # matches volume-name from below
+              - mountPath: /workspace/runs # directory IN the container
+                name: &ceph_runs runs # matches volume-name from below
+              - mountPath: /workspace/models
+                name: &ceph_models models
+              - mountPath: /dev/shm # fixes a common pytorch issue. just always mount this here
+                name: dshm
+      imagePullSecrets:
+        - name: lsx-registry
+      restartPolicy: "Never"
+      volumes:
+          - name: *ceph_data
+            cephfs:
+                monitors:
+                    - 132.187.14.16
+                    - 132.187.14.17
+                    - 132.187.14.19
+                    - 132.187.14.20  # Not important for you, just copy along
+                user: extch1  # <namespace>
+                path: "/home/ext/ch1/cluster-evaluation/data" # The path you want to mount
+                secretRef: # The name of the secret for auth. Is always "ceph-secret"
+                  name: ceph-secret
+          - name: *ceph_runs
+            cephfs:
+                monitors:
+                    - 132.187.14.16
+                    - 132.187.14.17
+                    - 132.187.14.19
+                    - 132.187.14.20  # Not important for you, just copy along
+                user: extch1  # <namespace>
+                path: "/home/ext/ch1/cluster-evaluation/runs" # The path you want to mount
+                secretRef: # The name of the secret for auth. Is always "ceph-secret"
+                    name: ceph-secret
+          - name: *ceph_models
+            cephfs:
+                monitors:
+                    - 132.187.14.16
+                    - 132.187.14.17
+                    - 132.187.14.19
+                    - 132.187.14.20
+                user: extch1
+                path: "/home/ext/ch1/cluster-evaluation/models"
+                secretRef:
+                    name: ceph-secret
+          - name: dshm # "needs" to be copied along, see above
+            emptyDir:
+                medium: "Memory"
+  backoffLimit: 0
