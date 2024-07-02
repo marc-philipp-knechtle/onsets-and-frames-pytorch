@@ -15,8 +15,15 @@ from mir_eval.util import hz_to_midi
 from tqdm import tqdm
 
 
-def parse_midi(path: str) -> np.ndarray:
-    """open midi file and return np.array of (onset, offset, note, velocity) rows"""
+def parse_midi(path: str, global_key_offset: int = 0) -> np.ndarray:
+    """
+    open midi file and return np.array() of (onset, offset, note, velocity) rows
+    Args:
+        path:
+        global_key_offset:
+    Returns:
+    """
+
     # todo, it might be necessary to extend this method to include the parsing of the vocal data etc.
     midi = mido.MidiFile(path)
 
@@ -121,7 +128,7 @@ def check_pitch_time_intervals(intervals_dict):
             end_current_interval_seconds = interval_list[i][0][1]
             start_next_interval_seconds = interval_list[i + 1][0][0]
             if end_current_interval_seconds >= start_next_interval_seconds:
-                logging.warn(
+                logging.warning(
                     f'End time should be smaller of equal start time of next note on the same pitch.\n'
                     f'Current Pitch End: {end_current_interval_seconds}\n'
                     f'Next pitch Start: {start_next_interval_seconds}\n'
