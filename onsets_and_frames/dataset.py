@@ -269,12 +269,9 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
 
     def files(self, group: str) -> List[Tuple]:
         """
-        # todo change setting default type of docstring
         Args:
-            group:
-
+            group: group to return the filenames for. See self.available_groups() for the groups
         Returns:
-
         """
         audio_filenames: List[str] = []
         # This is List of Tuples containing the midi/audio combination for each file
@@ -299,6 +296,9 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
             tsv_filename = midi_filename.replace('.mid', '.tsv').replace('.midi', '.tsv')
             if not os.path.exists(os.path.join(tsv_dir, tsv_filename)):
                 midi: np.ndarray = parse_midi(os.path.join(self.path, '01_RawData', 'score_midi', midi_filename))
+                # For some reason pycharm expects an int value in np.savetxt() midi is ofc not an int value.
+                # But this error is from pycharm. Therefore, the inspection is disabled here.
+                # noinspection PyTypeChecker
                 np.savetxt(os.path.join(tsv_dir, tsv_filename), midi, fmt='%.6f', delimiter='\t',
                            header='onset,offset,note,velocity')
             result.append((os.path.join(self.path, '01_RawData', 'audio_wav', audio_filename),
