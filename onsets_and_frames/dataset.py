@@ -275,7 +275,6 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         """
         audio_filenames: List[str] = []
         # This is List of Tuples containing the midi/audio combination for each file
-        files: List[Tuple] = []
 
         # for each group get the files
         # todo adding some form of handling wav and flac filenames
@@ -284,7 +283,7 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
 
         midi_filenames: List[str] = glob(os.path.join(self.path, '01_RawData', 'score_midi', '*.mid'))
 
-        files = self.combine_audio_midi(audio_filenames, midi_filenames)
+        files: List[Tuple] = self.combine_audio_midi(audio_filenames, midi_filenames)
 
         result: List[Tuple] = []
         audio_filename: str
