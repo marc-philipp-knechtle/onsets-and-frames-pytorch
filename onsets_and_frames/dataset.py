@@ -285,7 +285,7 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
 
         midi_filenames: List[str] = glob(os.path.join(self.path, '01_RawData', 'score_midi', '*.mid'))
 
-        files: List[Tuple] = self.combine_audio_midi(audio_filenames, midi_filenames)
+        files_audio_midi: List[Tuple] = self.combine_audio_midi(audio_filenames, midi_filenames)
 
         result: List[Tuple] = []
         audio_filename: str
@@ -293,7 +293,7 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         tsv_dir: str = os.path.join(self.path, '01_RawData', 'score_tsv')
         if not os.path.exists(tsv_dir):
             os.makedirs(tsv_dir)
-        for audio_filename, midi_filename in files:
+        for audio_filename, midi_filename in files_audio_midi:
             tsv_filename = midi_filename.replace('.mid', '.tsv').replace('.midi', '.tsv')
             if not os.path.exists(os.path.join(tsv_dir, tsv_filename)):
                 midi: np.ndarray = parse_midi(os.path.join(self.path, '01_RawData', 'score_midi', midi_filename))
