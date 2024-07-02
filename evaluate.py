@@ -17,7 +17,7 @@ from onsets_and_frames import *
 eps = sys.float_info.epsilon
 
 
-def evaluate(data: Dataset, model: OnsetsAndFrames, onset_threshold=0.5, frame_threshold=0.5, save_path=None):
+def evaluate(data: Dataset, model: OnsetsAndFrames, onset_threshold=0.5, frame_threshold=0.5, save_path=None) -> dict:
     metrics = defaultdict(list)
 
     for label in data:
@@ -118,7 +118,7 @@ def evaluate_file(model_file, dataset, dataset_group, sequence_length, save_path
     model = torch.load(model_file, map_location=device).eval()
     summary(model)
 
-    metrics = evaluate(tqdm(dataset), model, onset_threshold, frame_threshold, save_path)
+    metrics: dict = evaluate(tqdm(dataset), model, onset_threshold, frame_threshold, save_path)
 
     for key, values in metrics.items():
         if key.startswith('metric/'):
