@@ -240,11 +240,9 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         """
         This is intended as the method which finally does the warping of the Schubert Midi files
         Args:
-            audio_filenames:
-            midi_filenames:
-
-        Returns:
-
+            audio_filenames: List of all audio filenames
+            midi_filenames: List of all midi filenames
+        Returns: audio - midi filename combination in the form of a List of tuples
         """
         audio_midi_combination: List[Tuple] = []
         for audio_filename in audio_filenames:
