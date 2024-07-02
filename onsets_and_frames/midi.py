@@ -19,8 +19,8 @@ def parse_midi(path: str, global_key_offset: int = 0) -> np.ndarray:
     """
     open midi file and return np.array() of (onset, offset, note, velocity) rows
     Args:
-        path:
-        global_key_offset:
+        path: path to midi file
+        global_key_offset: sometimes
     Returns:
     """
 
@@ -47,7 +47,7 @@ def parse_midi(path: str, global_key_offset: int = 0) -> np.ndarray:
                          sustain=sustain)
             events.append(event)
 
-    notes = []
+    notes: List[Tuple] = []
     for i, onset in enumerate(events):
         if onset['velocity'] == 0:
             continue
@@ -60,7 +60,7 @@ def parse_midi(path: str, global_key_offset: int = 0) -> np.ndarray:
             offset = next(n for n in events[offset['index'] + 1:]
                           if n['type'] == 'sustain_off' or n['note'] == onset['note'] or n is events[-1])
 
-        note = (onset['time'], offset['time'], onset['note'], onset['velocity'])
+        note: Tuple = (onset['time'], offset['time'], onset['note'], onset['velocity'])
         notes.append(note)
 
     return np.array(notes)
