@@ -238,7 +238,6 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
     @staticmethod
     def combine_audio_midi(audio_filenames: List[str], midi_filenames: List[str]) -> List[Tuple]:
         """
-        todo reformat docstring
         This is intended as the method which finally does the warping of the Schubert Midi files
         Args:
             audio_filenames:
