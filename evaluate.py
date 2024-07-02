@@ -1,7 +1,9 @@
 import argparse
 import os
 import sys
+import logging
 from collections import defaultdict
+from datetime import datetime
 
 import numpy as np
 from mir_eval.multipitch import evaluate as evaluate_frames
@@ -15,6 +17,15 @@ import onsets_and_frames.dataset as dataset_module
 from onsets_and_frames import *
 
 eps = sys.float_info.epsilon
+
+# this is written like this for the docker container
+filepath = os.path.join('runs', 'evaluation' + datetime.now().strftime('%y%m%d-%H%M') + '.log')
+logging.basicConfig(filename=filepath, level=logging.INFO)
+logging.info('test')
+
+
+# if not os.path.exists(filepath):
+#     raise Exception('logging file was not created!')
 
 
 def evaluate(data: Dataset, model: OnsetsAndFrames, onset_threshold=0.5, frame_threshold=0.5, save_path=None) -> dict:
@@ -124,6 +135,7 @@ def evaluate_file(model_file, dataset, dataset_group, sequence_length, save_path
         if key.startswith('metric/'):
             _, category, name = key.split('/')
             print(f'{category:>32} {name:25}: {np.mean(values):.3f} ± {np.std(values):.3f}')
+            logging.info(f'{category:>32} {name:25}: {np.mean(values):.3f} ± {np.std(values):.3f}')
 
 
 if __name__ == '__main__':
