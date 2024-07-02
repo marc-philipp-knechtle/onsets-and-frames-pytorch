@@ -134,6 +134,8 @@ if __name__ == '__main__':
 
     def process(input_file, output_file):
         midi_data = parse_midi(input_file)
+        # see explanation in dataset.py for np.savetxt
+        # noinspection PyTypeChecker
         np.savetxt(output_file, midi_data, '%.6f', '\t', header='onset\toffset\tnote\tvelocity')
 
 
@@ -147,7 +149,7 @@ if __name__ == '__main__':
                 print('ignoring non-MIDI file %s' % input_file, file=sys.stderr)
                 continue
 
-            yield (input_file, output_file)
+            yield input_file, output_file
 
 
     Parallel(n_jobs=multiprocessing.cpu_count())(delayed(process)(in_file, out_file) for in_file, out_file in files())
