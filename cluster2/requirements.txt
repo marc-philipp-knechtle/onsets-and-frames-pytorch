@@ -27,6 +27,7 @@ numba>=0.51.2
 numpy>=1.15
 oauthlib>=3.1.0
 packaging>=20.4
+pandas
 Pillow>=6.2.0
 pooch>=1.2.0
 pretty-midi>=0.2.9
