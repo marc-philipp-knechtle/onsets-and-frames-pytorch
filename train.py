@@ -1,3 +1,6 @@
+import glob
+import logging
+import re
 import os
 import sys
 from datetime import datetime
@@ -101,10 +104,29 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
     dataset_training, validation_dataset = create_datasets(sequence_length, train_groups, train_on, validation_groups,
                                                            validation_length)
     loader = DataLoader(dataset_training, batch_size, shuffle=True, drop_last=True)
-    if resume_iteration is None:
+    if resume_iteration is None and "transcriber" in logdir:
+        logging.info("Creating logdir automatically and beginning training from the start.")
         model = OnsetsAndFrames(N_MELS, MAX_MIDI - MIN_MIDI + 1, model_complexity).to(device)
         optimizer = torch.optim.Adam(model.parameters(), learning_rate)
         resume_iteration = 0
+    elif 'transcriber' not in logdir:
+        # "We want to resume the last iteration, however the resume iteration has not been set.
+        # we have to determine the last iteration automatically"
+        models = glob.glob(os.path.join(logdir, '*'))
+        matching_files = [file for file in models if 'model-' in os.path.basename(file)]
+        matching_files.sort()
+        if len(matching_files) > 0:
+            model_path: str = matching_files[-1]
+            resume_iteration: int = int(re.findall(r'\d+', os.path.basename(model_path))[0])
+            model = torch.load(model_path)
+            optimizer = torch.optim.Adam(model.parameters(), learning_rate)
+            optimizer.load_state_dict(torch.load(os.path.join(logdir, 'last-optimizer-state.pt')))
+            logging.info(f"Resuming training at previously automatically determined state: {model_path}")
+        else:
+            model = OnsetsAndFrames(N_MELS, MAX_MIDI - MIN_MIDI + 1, model_complexity).to(device)
+            optimizer = torch.optim.Adam(model.parameters(), learning_rate)
+            resume_iteration = 0
+            logging.info("Creating logdir automatically and beginning training from the start.")
     else:
         model_path = os.path.join(logdir, f'model-{resume_iteration}.pt')
         model = torch.load(model_path)
@@ -156,5 +178,7 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
                          resume_iteration, sequence_length, train_on, validation_interval, validation_length, writer)
     except Exception as e:
         writer.add_text('train/error', str(e))
+        logging.error(str(e))
         print(e)
         print(str(e), file=sys.stderr)
+        raise e
