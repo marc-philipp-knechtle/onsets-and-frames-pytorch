@@ -8,7 +8,7 @@ spec:
       priorityClassName: research-med
       containers:
         - name: *jobname # gets read as "test-job" as it links to the variable definition above
-          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-cluster3:0.0.1
+          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-cluster3:0.0.2
           imagePullPolicy: "IfNotPresent"
           env:
               - name: DATADIR
