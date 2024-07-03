@@ -43,7 +43,8 @@ def parse_midi(path: str, global_key_offset: int = 0) -> np.ndarray:
         if 'note' in message.type:
             # MIDI offsets can be either 'note_off' events or 'note_on' with zero velocity
             velocity = message.velocity if message.type == 'note_on' else 0
-            event = dict(index=len(events), time=time, type='note', note=message.note, velocity=velocity,
+            event = dict(index=len(events), time=time, type='note', note=message.note + global_key_offset,
+                         velocity=velocity,
                          sustain=sustain)
             events.append(event)
 

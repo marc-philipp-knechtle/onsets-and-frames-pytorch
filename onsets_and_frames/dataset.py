@@ -9,6 +9,8 @@ from typing import List, Tuple
 import librosa
 import numpy as np
 import soundfile
+import pandas as pd
+
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
@@ -287,6 +289,9 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
 
         files_audio_midi: List[Tuple] = self.combine_audio_midi(audio_filenames, midi_filenames)
 
+        ann_audio_globalkey: pd.DataFrame = pd.read_csv(
+            os.path.join(self.path, '02_Annotations', 'ann_audio_globalkey.csv'), sep=';')
+
         result: List[Tuple] = []
         audio_filename: str
         midi_filename: str
@@ -296,7 +301,16 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         for audio_filename, midi_filename in files_audio_midi:
             tsv_filename = midi_filename.replace('.mid', '.tsv').replace('.midi', '.tsv')
             if not os.path.exists(os.path.join(tsv_dir, tsv_filename)):
-                midi: np.ndarray = parse_midi(os.path.join(self.path, '01_RawData', 'score_midi', midi_filename))
+                work_id: str = audio_filename[:16]
+                performance_id: str = audio_filename[17:21]
+                column: pd.DataFrame = ann_audio_globalkey[(ann_audio_globalkey['WorkID'] == work_id) & (
+                        ann_audio_globalkey['PerformanceID'] == performance_id)]
+                if len(column) != 1:
+                    raise RuntimeError(
+                        "Didn't find the matching annotion for global key offset. Please check manually.")
+                global_key_offset: int = column['transposeToMatchScore'].item()
+                midi: np.ndarray = parse_midi(os.path.join(self.path, '01_RawData', 'score_midi', midi_filename),
+                                              global_key_offset)
                 # For some reason pycharm expects an int value in np.savetxt() midi is ofc not an int value.
                 # But this error is from pycharm. Therefore, the inspection is disabled here.
                 # noinspection PyTypeChecker
