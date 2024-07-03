@@ -309,6 +309,8 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
                     raise RuntimeError(
                         "Didn't find the matching annotion for global key offset. Please check manually.")
                 global_key_offset: int = column['transposeToMatchScore'].item()
+                logging.info(
+                    f'Parsing midi file: {os.path.basename(midi_filename)} with offset {str(global_key_offset)}')
                 midi: np.ndarray = parse_midi(os.path.join(self.path, '01_RawData', 'score_midi', midi_filename),
                                               global_key_offset)
                 # For some reason pycharm expects an int value in np.savetxt() midi is ofc not an int value.
