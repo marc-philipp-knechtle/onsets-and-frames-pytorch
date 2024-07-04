@@ -159,6 +159,7 @@ def run_iteration(batch, checkpoint_interval, clip_gradient_norm, i, logdir, mod
                 writer.add_scalar('validation/' + key.replace(' ', '_'), np.mean(value), global_step=i)
         model.train()
     if i % checkpoint_interval == 0:
+        logging.info(f'saving mode model-{i}.pt')
         torch.save(model, os.path.join(logdir, f'model-{i}.pt'))
         torch.save(optimizer.state_dict(), os.path.join(logdir, 'last-optimizer-state.pt'))
 
