@@ -39,6 +39,8 @@ COPY cluster2/requirements.txt .
 RUN conda install pip
 RUN conda install GitPython
 RUN pip install -r requirements.txt
+# todo why do I have this here? I think this is some weird caching issue
+RUN pip install pandas
 
 COPY onsets_and_frames onsets_and_frames
 COPY train.py .
