@@ -306,7 +306,6 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
                            os.path.join(tsv_dir, tsv_filename)))
         return result
 
-    @staticmethod
     def create_tsv(self, ann_audio_globalkey, audio_filename, midi_filename, tsv_filepath):
         work_id: str = audio_filename[:16]
         performance_id: str = audio_filename[17:21]
