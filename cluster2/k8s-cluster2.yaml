@@ -63,4 +63,4 @@ spec:
           - name: dshm # "needs" to be copied along, see above
             emptyDir:
                 medium: "Memory"
-  backoffLimit: 0
+  backoffLimit: 6
