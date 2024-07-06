@@ -139,6 +139,10 @@ def _create_piano_midi(intervals_dict, pitches, velocities) -> pretty_midi.Instr
 
 
 if __name__ == '__main__':
+    """
+    Creates tsv files for midi file
+    """
+
 
     def process(input_file, output_file):
         midi_data = parse_midi(input_file)
