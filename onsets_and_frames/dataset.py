@@ -15,7 +15,7 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 
 from .constants import *
-from .midi import parse_midi
+from .midi import parse_midi, save_np_arr_as_midi
 
 
 class PianoRollAudioDataset(Dataset):
@@ -314,11 +314,14 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         if len(column) != 1:
             raise RuntimeError(
                 "Didn't find the matching annotion for global key offset. Please check manually.")
-        global_key_offset: int = column['transposeToMatchScore'].item()
+        global_key_offset: int = -column['transposeToMatchScore'].item()
         logging.info(
-            f'Parsing midi file: {os.path.basename(midi_filename)} with offset {str(global_key_offset)}')
+            f'Parsing midi file: {os.path.basename(midi_filename)} for audio {os.path.basename(audio_filename)} '
+            f'with offset {str(global_key_offset)}')
         midi: np.ndarray = parse_midi(str(os.path.join(self.path, '01_RawData', 'score_midi', midi_filename)),
                                       global_key_offset)
+        # This is for debugging the tsv creation process -> You can listen to the midi afterwards
+        # save_np_arr_as_midi(midi, str(os.path.join(os.path.dirname(tsv_filepath), audio_filename + '.mid')))
         # For some reason pycharm expects an int value in np.savetxt() midi is ofc not an int value.
         # But this error is from pycharm. Therefore, the inspection is disabled here.
         # noinspection PyTypeChecker

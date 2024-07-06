@@ -1,4 +1,5 @@
 import logging
+import math
 import multiprocessing
 import os.path
 import sys
@@ -95,6 +96,32 @@ def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities)
     #  (which can use other sounds compared to the default sine wave)
     scipy.io.wavfile.write(os.path.join(os.path.dirname(path), os.path.basename(path) + '.wav'), 44100,
                            audio_data)
+    file.write(path)
+
+
+def save_np_arr_as_midi(midi_arr: np.ndarray, path: str):
+    """
+    Converts Array of form [(onset_time, offset_time, note, velocity), ...] to MIDI file and saves it.
+    This method is mainly used for debugging purposes
+    Args:
+        midi_arr: Array of form [(onset_time, offset_time, note, velocity), ...]
+        path: path to save the MIDI file
+    Returns: Nothing lol
+    """
+    piano_program = pretty_midi.instrument_name_to_program('Acoustic Grand Piano')
+    piano = pretty_midi.Instrument(program=piano_program)
+    onset: Tuple
+    for onset in midi_arr:
+        if math.isnan(onset[2]):
+            continue
+        velocity = int(onset[3])
+        pitch = int(onset[2])
+        end_time = onset[1]
+        start_time = onset[0]
+        note = pretty_midi.Note(start=start_time, end=end_time, velocity=velocity, pitch=pitch)
+        piano.notes.append(note)
+    file: pretty_midi.PrettyMIDI = pretty_midi.PrettyMIDI()
+    file.instruments.append(piano)
     file.write(path)
 
 
