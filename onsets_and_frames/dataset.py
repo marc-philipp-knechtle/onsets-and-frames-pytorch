@@ -301,23 +301,26 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         for audio_filename, midi_filename in files_audio_midi:
             tsv_filename = audio_filename.replace('.mid', '.tsv').replace('.wav', '.tsv')
             if not os.path.exists(os.path.join(tsv_dir, tsv_filename)):
-                work_id: str = audio_filename[:16]
-                performance_id: str = audio_filename[17:21]
-                column: pd.DataFrame = ann_audio_globalkey[(ann_audio_globalkey['WorkID'] == work_id) & (
-                        ann_audio_globalkey['PerformanceID'] == performance_id)]
-                if len(column) != 1:
-                    raise RuntimeError(
-                        "Didn't find the matching annotion for global key offset. Please check manually.")
-                global_key_offset: int = column['transposeToMatchScore'].item()
-                logging.info(
-                    f'Parsing midi file: {os.path.basename(midi_filename)} with offset {str(global_key_offset)}')
-                midi: np.ndarray = parse_midi(os.path.join(self.path, '01_RawData', 'score_midi', midi_filename),
-                                              global_key_offset)
-                # For some reason pycharm expects an int value in np.savetxt() midi is ofc not an int value.
-                # But this error is from pycharm. Therefore, the inspection is disabled here.
-                # noinspection PyTypeChecker
-                np.savetxt(os.path.join(tsv_dir, tsv_filename), midi, fmt='%.6f', delimiter='\t',
-                           header='onset,offset,note,velocity')
+                self.create_tsv(ann_audio_globalkey, audio_filename, midi_filename, os.path.join(tsv_dir, tsv_filename))
             result.append((os.path.join(self.path, '01_RawData', 'audio_wav', audio_filename),
                            os.path.join(tsv_dir, tsv_filename)))
         return result
+
+    @staticmethod
+    def create_tsv(self, ann_audio_globalkey, audio_filename, midi_filename, tsv_filepath):
+        work_id: str = audio_filename[:16]
+        performance_id: str = audio_filename[17:21]
+        column: pd.DataFrame = ann_audio_globalkey[(ann_audio_globalkey['WorkID'] == work_id) & (
+                ann_audio_globalkey['PerformanceID'] == performance_id)]
+        if len(column) != 1:
+            raise RuntimeError(
+                "Didn't find the matching annotion for global key offset. Please check manually.")
+        global_key_offset: int = column['transposeToMatchScore'].item()
+        logging.info(
+            f'Parsing midi file: {os.path.basename(midi_filename)} with offset {str(global_key_offset)}')
+        midi: np.ndarray = parse_midi(str(os.path.join(self.path, '01_RawData', 'score_midi', midi_filename)),
+                                      global_key_offset)
+        # For some reason pycharm expects an int value in np.savetxt() midi is ofc not an int value.
+        # But this error is from pycharm. Therefore, the inspection is disabled here.
+        # noinspection PyTypeChecker
+        np.savetxt(tsv_filepath, midi, fmt='%.6f', delimiter='\t', header='onset,offset,note,velocity')
