@@ -84,7 +84,7 @@ def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities)
         pitch = int(round(hz_to_midi(pitches[i])))
         intervals_dict[pitch].append((intervals[i], i))
 
-    check_pitch_time_intervals(intervals_dict)
+    _check_pitch_time_intervals(intervals_dict)
 
     piano: pretty_midi.Instrument = _create_piano_midi(intervals_dict, pitches, velocities)
 
@@ -98,7 +98,7 @@ def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities)
     file.write(path)
 
 
-def check_pitch_time_intervals(intervals_dict):
+def _check_pitch_time_intervals(intervals_dict):
     pitch: int
     for pitch in intervals_dict:
         """
