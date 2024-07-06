@@ -104,6 +104,16 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
     dataset_training, validation_dataset = create_datasets(sequence_length, train_groups, train_on, validation_groups,
                                                            validation_length)
     loader = DataLoader(dataset_training, batch_size, shuffle=True, drop_last=True)
+    model, optimizer, resume_iteration = create_model(device, learning_rate, logdir, model_complexity, resume_iteration)
+    summary(model)
+    scheduler = StepLR(optimizer, step_size=learning_rate_decay_steps, gamma=learning_rate_decay_rate)
+    loop = tqdm(range(resume_iteration + 1, iterations + 1))
+    for i, batch in zip(loop, cycle(loader)):
+        run_iteration(batch, checkpoint_interval, clip_gradient_norm, i, logdir, model, optimizer, scheduler,
+                      validation_dataset, validation_interval, writer)
+
+
+def create_model(device, learning_rate, logdir, model_complexity, resume_iteration):
     if resume_iteration is None and "transcriber" in logdir:
         logging.info("Creating logdir automatically and beginning training from the start.")
         model = OnsetsAndFrames(N_MELS, MAX_MIDI - MIN_MIDI + 1, model_complexity).to(device)
@@ -132,12 +142,7 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
         model = torch.load(model_path)
         optimizer = torch.optim.Adam(model.parameters(), learning_rate)
         optimizer.load_state_dict(torch.load(os.path.join(logdir, 'last-optimizer-state.pt')))
-    summary(model)
-    scheduler = StepLR(optimizer, step_size=learning_rate_decay_steps, gamma=learning_rate_decay_rate)
-    loop = tqdm(range(resume_iteration + 1, iterations + 1))
-    for i, batch in zip(loop, cycle(loader)):
-        run_iteration(batch, checkpoint_interval, clip_gradient_norm, i, logdir, model, optimizer, scheduler,
-                      validation_dataset, validation_interval, writer)
+    return model, optimizer, resume_iteration
 
 
 def run_iteration(batch, checkpoint_interval, clip_gradient_norm, i, logdir, model, optimizer, scheduler,
