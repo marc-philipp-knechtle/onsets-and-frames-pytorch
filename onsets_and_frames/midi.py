@@ -21,7 +21,7 @@ def parse_midi(path: str, global_key_offset: int = 0) -> np.ndarray:
     Args:
         path: path to midi file
         global_key_offset: sometimes
-    Returns:
+    Returns: np.ndarray() with (onset, offset, note, velocity) for each note
     """
 
     # todo, it might be necessary to extend this method to include the parsing of the vocal data etc.
