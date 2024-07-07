@@ -25,8 +25,14 @@ def parse_midi(path: str, global_key_offset: int = 0) -> np.ndarray:
     Returns: np.ndarray() with (onset, offset, note, velocity) for each note
     """
 
-    # todo, it might be necessary to extend this method to include the parsing of the vocal data etc.
     midi = mido.MidiFile(path)
+
+    if len(midi.tracks) > 2:
+        logging.warning('Multiple midi tracks detected. Found Tracks:')
+        for track in midi.tracks:
+            logging.warning(track.name)
+        logging.warning('The Processing of these files handles all tracks as part of the piano part.\n'
+                        'There is no differentiation.')
 
     time = 0
     sustain = False
