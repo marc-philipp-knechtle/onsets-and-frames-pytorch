@@ -21,7 +21,6 @@ eps = sys.float_info.epsilon
 # this is written like this for the docker container
 filepath = os.path.join('runs', 'evaluation' + datetime.now().strftime('%y%m%d-%H%M') + '.log')
 logging.basicConfig(filename=filepath, level=logging.INFO)
-logging.info('test')
 
 
 # if not os.path.exists(filepath):
