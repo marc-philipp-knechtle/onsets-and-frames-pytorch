@@ -40,6 +40,11 @@ def parse_midi(path: str, global_key_offset: int = 0) -> np.ndarray:
     for message in midi:
         time += message.time
 
+        # This was used to skip the vocal annotations for a pure piano training
+        # channel: int = getattr(message, 'channel', 0)
+        # if channel == 1:
+        #     continue
+
         if message.type == 'control_change' and message.control == 64 and (message.value >= 64) != sustain:
             # sustain pedal state has just changed
             sustain = message.value >= 64
