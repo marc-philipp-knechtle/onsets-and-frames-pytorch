@@ -18,14 +18,6 @@ from onsets_and_frames import *
 
 eps = sys.float_info.epsilon
 
-# this is written like this for the docker container
-filepath = os.path.join('runs', 'evaluation' + datetime.now().strftime('%y%m%d-%H%M') + '.log')
-logging.basicConfig(filename=filepath, level=logging.INFO)
-
-
-# if not os.path.exists(filepath):
-#     raise Exception('logging file was not created!')
-
 
 def evaluate(data: Dataset, model: OnsetsAndFrames, onset_threshold=0.5, frame_threshold=0.5, save_path=None) -> dict:
     metrics = defaultdict(list)
@@ -147,6 +139,12 @@ if __name__ == '__main__':
     parser.add_argument('--onset-threshold', default=0.5, type=float)
     parser.add_argument('--frame-threshold', default=0.5, type=float)
     parser.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
+
+    # this is written like this for the docker container
+    logging_filepath = os.path.join('runs', 'evaluation' + datetime.now().strftime('%y%m%d-%H%M') + '.log')
+    logging.basicConfig(filename=logging_filepath, level=logging.INFO)
+    if not os.path.exists(logging_filepath):
+        raise Exception('logging file was not created!')
 
     with torch.no_grad():
         evaluate_file(**vars(parser.parse_args()))
