@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 from evaluate import evaluate
 from onsets_and_frames import *
-from onsets_and_frames.dataset import PianoRollAudioDataset, SchubertWinterreiseDataset
+from onsets_and_frames.dataset import SchubertWinterreiseDataset
 
 ex = Experiment('train_transcriber')
 
