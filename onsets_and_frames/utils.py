@@ -13,6 +13,13 @@ def cycle(iterable):
 
 
 def summary(model, file=sys.stdout):
+    """
+    Print a summary of the model
+    Args:
+        model: model file
+        file: output file
+    Returns: Nothing
+    """
     def repr(model):
         # We treat the extra repr like the sub-module, one item per line
         extra_lines = []
