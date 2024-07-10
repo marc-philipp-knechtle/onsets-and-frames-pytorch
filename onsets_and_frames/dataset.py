@@ -227,7 +227,7 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
     """
 
     def __init__(self,
-                 path='data/Schubert_Winterreise_Dataset_v1-0', groups=None, sequence_length=None, seed=42,
+                 path='data/Schubert_Winterreise_Dataset_v2-1', groups=None, sequence_length=None, seed=42,
                  device=DEFAULT_DEVICE):
         super().__init__(path,
                          groups if groups is not None else ['AL98', 'FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
@@ -326,3 +326,11 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         # But this error is from pycharm. Therefore, the inspection is disabled here.
         # noinspection PyTypeChecker
         np.savetxt(tsv_filepath, midi, fmt='%.6f', delimiter='\t', header='onset,offset,note,velocity')
+
+
+class SchubertWinterreisePiano(PianoRollAudioDataset):
+    ...
+
+
+class SchubertWinterreiseVoice(PianoRollAudioDataset):
+    ...
