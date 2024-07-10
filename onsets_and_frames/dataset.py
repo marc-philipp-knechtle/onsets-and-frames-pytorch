@@ -299,12 +299,13 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         for audio_filename, midi_filename in files_audio_midi:
             tsv_filename = audio_filename.replace('.mid', '.tsv').replace('.wav', '.tsv')
             if not os.path.exists(os.path.join(tsv_dir, tsv_filename)):
-                self.create_tsv(ann_audio_globalkey, audio_filename, midi_filename, os.path.join(tsv_dir, tsv_filename))
+                self._create_tsv(ann_audio_globalkey, audio_filename, midi_filename,
+                                 os.path.join(tsv_dir, tsv_filename))
             result.append((os.path.join(self.path, '01_RawData', 'audio_wav', audio_filename),
                            os.path.join(tsv_dir, tsv_filename)))
         return result
 
-    def create_tsv(self, ann_audio_globalkey, audio_filename, midi_filename, tsv_filepath):
+    def _create_tsv(self, ann_audio_globalkey, audio_filename, midi_filename, tsv_filepath):
         work_id: str = audio_filename[:16]
         performance_id: str = audio_filename[17:21]
         column: pd.DataFrame = ann_audio_globalkey[(ann_audio_globalkey['WorkID'] == work_id) & (
@@ -326,9 +327,9 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         np.savetxt(tsv_filepath, midi, fmt='%.6f', delimiter='\t', header='onset,offset,note,velocity')
 
 
-class SchubertWinterreisePiano(PianoRollAudioDataset):
+class SchubertWinterreisePiano(SchubertWinterreiseDataset):
     ...
 
 
-class SchubertWinterreiseVoice(PianoRollAudioDataset):
+class SchubertWinterreiseVoice(SchubertWinterreiseDataset):
     ...
