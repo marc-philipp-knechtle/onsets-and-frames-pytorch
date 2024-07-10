@@ -278,10 +278,7 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         Returns:
         """
         audio_filenames: List[str] = []
-        # This is List of Tuples containing the midi/audio combination for each file
 
-        # for each group get the files
-        # todo adding some form of handling wav and flac filenames
         audio_filenames.extend(
             self.get_filenames_from_group(os.path.join(self.path, '01_RawData', 'audio_wav'), group))
 
@@ -292,6 +289,7 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         ann_audio_globalkey: pd.DataFrame = pd.read_csv(
             os.path.join(self.path, '02_Annotations', 'ann_audio_globalkey.csv'), sep=';')
 
+        # This is List of Tuples containing the midi/audio combination for each file
         result: List[Tuple] = []
         audio_filename: str
         midi_filename: str
