@@ -305,7 +305,17 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
                            os.path.join(tsv_dir, tsv_filename)))
         return result
 
-    def _create_tsv(self, ann_audio_globalkey, audio_filename, midi_filename, tsv_filepath):
+    def _create_tsv(self, ann_audio_globalkey: pd.DataFrame, audio_filename: str, midi_filename: str,
+                    tsv_filepath: str):
+        """
+        Converts the midi representation into a tsv representation which is then used in the ML workflow.
+        Args:
+            ann_audio_globalkey: globalkey of this example. Used for key transformation.
+            audio_filename: used to extract the corresponding versions
+            midi_filename: used to extract midi
+            tsv_filepath: storage location of csv
+        Returns: Nothing, it saves a file
+        """
         work_id: str = audio_filename[:16]
         performance_id: str = audio_filename[17:21]
         column: pd.DataFrame = ann_audio_globalkey[(ann_audio_globalkey['WorkID'] == work_id) & (
