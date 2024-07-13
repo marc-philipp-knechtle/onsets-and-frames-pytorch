@@ -9,13 +9,13 @@ from typing import List, Tuple
 import librosa
 import numpy as np
 import soundfile
-import pandas as pd
 
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
+from . import midi
 from .constants import *
-from .midi import parse_midi, save_np_arr_as_midi
+from .midi import parse_midi
 
 
 class PianoRollAudioDataset(Dataset):
@@ -240,7 +240,7 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         return matching_files
 
     @staticmethod
-    def combine_audio_midi(audio_filenames: List[str], midi_filenames: List[str]) -> List[Tuple]:
+    def combine_audio_midi(audio_filenames: List[str], midi_filenames: List[str]) -> List[Tuple[str, str]]:
         """
         This is intended as the method which finally does the warping of the Schubert Midi files
         Args:
@@ -248,14 +248,14 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
             midi_filenames: List of all midi filenames
         Returns: audio - midi filename combination in the form of a List of tuples
         """
-        audio_midi_combination: List[Tuple] = []
+        audio_midi_combination: List[Tuple[str, str]] = []
         for audio_filename in audio_filenames:
             basename = os.path.basename(audio_filename)
-            # get number of piece
             number_str: str = basename[14:16]
+            performance: str = basename[17:21]
             # Find matching midi file
             matching_files = [midi_file for midi_file in midi_filenames if
-                              re.compile(fr".*-{number_str}.*").search(midi_file)]
+                              re.compile(fr".*-{number_str}_{performance}.*").search(midi_file)]
             if len(matching_files) > 1:
                 raise RuntimeError(f"Found more than one matching file for audio filename: {audio_filename}")
             midi_filepath: str = matching_files[0]
@@ -275,66 +275,95 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         """
         Args:
             group: group to return the filenames for. See self.available_groups() for the groups
-        Returns:
+        Returns: List[Tuple[audio_filename, csv_filename]] is a List of all audio tsv file combinations for this piece
         """
-        audio_filenames: List[str] = []
+        audio_filenames: List[str] = self.get_filenames_from_group(os.path.join(self.path, '01_RawData', 'audio_wav'),
+                                                                   group)
 
-        audio_filenames.extend(
-            self.get_filenames_from_group(os.path.join(self.path, '01_RawData', 'audio_wav'), group))
+        ann_audio_note_filepaths_csv: List[str] = glob(
+            os.path.join(self.path, '02_Annotations', 'ann_audio_note', '*.csv'))
+        # convert csv files into midi
+        midi_path = midi.save_csv_as_midi(ann_audio_note_filepaths_csv,
+                                          os.path.join(self.path, '02_Annotations', 'ann_audio_note_midi'))
+        midi_audio_filenames: List[str] = glob(os.path.join(midi_path, '*.mid'))
+        files_audio_audio_midi: List[Tuple[str, str]] = self.combine_audio_midi(audio_filenames, midi_audio_filenames)
 
-        midi_filenames: List[str] = glob(os.path.join(self.path, '01_RawData', 'score_midi', '*.mid'))
-
-        files_audio_midi: List[Tuple] = self.combine_audio_midi(audio_filenames, midi_filenames)
-
-        ann_audio_globalkey: pd.DataFrame = pd.read_csv(
-            os.path.join(self.path, '02_Annotations', 'ann_audio_globalkey.csv'), sep=';')
+        """
+        The issue with this approach is that the midi_score_filenames are not individual transcriptions of the pieces. 
+        However, they are just the score and each version is slightly different to the score! 
+        """
+        # midi_score_filenames: List[str] = glob(os.path.join(self.path, '01_RawData', 'score_midi', '*.mid'))
+        # files_audio_score_midi: List[Tuple[str, str]] = self.combine_audio_midi(audio_filenames, midi_score_filenames)
+        # This method also isn't necessary anymore once the audio transcription works!
+        # ann_audio_globalkey: pd.DataFrame = pd.read_csv(
+        #     os.path.join(self.path, '02_Annotations', 'ann_audio_globalkey.csv'), sep=';')
 
         # This is List of Tuples containing the midi/audio combination for each file
+        result = self.create_audio_tsv(files_audio_audio_midi)
+        return result
+
+    def create_audio_tsv(self, files_audio_audio_midi):
         result: List[Tuple] = []
         audio_filename: str
         midi_filename: str
-        tsv_dir: str = os.path.join(self.path, '01_RawData', 'score_tsv')
+        tsv_dir: str = os.path.join(self.path, '02_Annotations', 'ann_audio_note_tsv')
+        midi_dir = os.path.join(self.path, '02_Annotations', 'ann_audio_note_midi')
         if not os.path.exists(tsv_dir):
             os.makedirs(tsv_dir)
-        for audio_filename, midi_filename in files_audio_midi:
+        for audio_filename, midi_filename in files_audio_audio_midi:
             tsv_filename = audio_filename.replace('.mid', '.tsv').replace('.wav', '.tsv')
             if not os.path.exists(os.path.join(tsv_dir, tsv_filename)):
-                self._create_tsv(ann_audio_globalkey, audio_filename, midi_filename,
-                                 os.path.join(tsv_dir, tsv_filename))
+                # self._create_tsv(ann_audio_globalkey, audio_filename, midi_filename,
+                #                  os.path.join(tsv_dir, tsv_filename))
+                self.create_tsv_from_audio_and_midi(os.path.join(midi_dir, midi_filename),
+                                                    os.path.join(tsv_dir, tsv_filename))
             result.append((os.path.join(self.path, '01_RawData', 'audio_wav', audio_filename),
                            os.path.join(tsv_dir, tsv_filename)))
         return result
 
-    def _create_tsv(self, ann_audio_globalkey: pd.DataFrame, audio_filename: str, midi_filename: str,
-                    tsv_filepath: str):
-        """
-        Converts the midi representation into a tsv representation which is then used in the ML workflow.
-        Args:
-            ann_audio_globalkey: globalkey of this example. Used for key transformation.
-            audio_filename: used to extract the corresponding versions
-            midi_filename: used to extract midi
-            tsv_filepath: storage location of csv
-        Returns: Nothing, it saves a file
-        """
-        work_id: str = audio_filename[:16]
-        performance_id: str = audio_filename[17:21]
-        column: pd.DataFrame = ann_audio_globalkey[(ann_audio_globalkey['WorkID'] == work_id) & (
-                ann_audio_globalkey['PerformanceID'] == performance_id)]
-        if len(column) != 1:
-            raise RuntimeError(
-                "Didn't find the matching annotion for global key offset. Please check manually.")
-        global_key_offset: int = -column['transposeToMatchScore'].item()
-        logging.info(
-            f'Parsing midi file: {os.path.basename(midi_filename)} for audio {os.path.basename(audio_filename)} '
-            f'with offset {str(global_key_offset)}')
-        midi: np.ndarray = parse_midi(str(os.path.join(self.path, '01_RawData', 'score_midi', midi_filename)),
-                                      global_key_offset)
-        # This is for debugging the tsv creation process -> You can listen to the midi afterwards
-        # save_np_arr_as_midi(midi, str(os.path.join(os.path.dirname(tsv_filepath), audio_filename + '.mid')))
+    # This is deprecated in favor of the new midi handling where the files are completely annotated
+    # def create_tsv(self, ann_audio_globalkey: pd.DataFrame, audio_filename: str, midi_filename: str,
+    #                tsv_filepath: str):
+    #     """
+    #     Converts the midi representation into a tsv representation which is then used in the ML workflow.
+    #     Args:
+    #         ann_audio_globalkey: globalkey of this example. Used for key transformation.
+    #         audio_filename: used to extract the corresponding versions
+    #         midi_filename: used to extract midi
+    #         tsv_filepath: storage location of csv
+    #     Returns: Nothing, it saves a file
+    #     """
+    #     work_id: str = audio_filename[:16]
+    #     performance_id: str = audio_filename[17:21]
+    #     column: pd.DataFrame = ann_audio_globalkey[(ann_audio_globalkey['WorkID'] == work_id) & (
+    #             ann_audio_globalkey['PerformanceID'] == performance_id)]
+    #     if len(column) != 1:
+    #         raise RuntimeError(
+    #             "Didn't find the matching annotion for global key offset. Please check manually.")
+    #     global_key_offset: int = -column['transposeToMatchScore'].item()
+    #     logging.info(
+    #         f'Parsing midi file: {os.path.basename(midi_filename)} for audio {os.path.basename(audio_filename)} '
+    #         f'with offset {str(global_key_offset)}')
+    #     midi: np.ndarray = parse_midi(str(os.path.join(self.path, '01_RawData', 'score_midi', midi_filename)),
+    #                                   global_key_offset)
+    #     # This is for debugging the tsv creation process -> You can listen to the midi afterwards
+    #     # save_np_arr_as_midi(midi, str(os.path.join(os.path.dirname(tsv_filepath), audio_filename + '.mid')))
+    #
+    #     # For some reason pycharm expects an int value in np.savetxt() midi is ofc not an int value.
+    #     # But this error is from pycharm. Therefore, the inspection is disabled here.
+    #     # noinspection PyTypeChecker
+    #     np.savetxt(tsv_filepath, midi, fmt='%.6f', delimiter='\t', header='onset,offset,note,velocity')
+
+    @staticmethod
+    def create_tsv_from_audio_and_midi(midi_filepath: str, tsv_filepath: str):
+        midi_filename: str = os.path.basename(midi_filepath)
+        logging.info(f'Parsing midi file: {os.path.basename(midi_filename)}.')
+        midifile: np.ndarray = parse_midi(midi_filepath)
         # For some reason pycharm expects an int value in np.savetxt() midi is ofc not an int value.
         # But this error is from pycharm. Therefore, the inspection is disabled here.
+        midi.save_np_arr_as_midi(midifile, str(os.path.join(os.path.dirname(tsv_filepath), midi_filename + '.mid')))
         # noinspection PyTypeChecker
-        np.savetxt(tsv_filepath, midi, fmt='%.6f', delimiter='\t', header='onset,offset,note,velocity')
+        np.savetxt(fname=tsv_filepath, X=midifile, fmt='%.6f', delimiter='\t', header='onset,offset,note,velocity')
 
 
 class SchubertWinterreisePiano(SchubertWinterreiseDataset):

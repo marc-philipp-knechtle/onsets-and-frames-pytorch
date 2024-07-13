@@ -6,6 +6,7 @@ import sys
 from typing import Tuple, List
 
 import mido
+import pandas as pd
 import pretty_midi
 import numpy as np
 import collections
@@ -134,6 +135,51 @@ def save_np_arr_as_midi(midi_arr: np.ndarray, path: str):
     file: pretty_midi.PrettyMIDI = pretty_midi.PrettyMIDI()
     file.instruments.append(piano)
     file.write(path)
+
+
+def save_csv_as_midi(csv_filenames: List[str], path: str) -> str:
+    """
+    Args:
+        csv_filenames: csv files in the format: [onset_time, offset_time, pitch, pitchclass, instrument]
+        path: where the MIDI files are stored
+    Returns: path where the MIDI files are saved
+    """
+    if not os.path.exists(path):
+        os.mkdir(path)
+    csv_filename: str
+    for csv_filename in csv_filenames:
+        # process single file
+        ann_audio_note: pd.DataFrame = pd.read_csv(csv_filename, sep=';')
+        ann_audio_filepath = os.path.join(path, os.path.basename(csv_filename.replace('.csv', '.mid')))
+
+        if os.path.exists(ann_audio_filepath):
+            continue
+
+        piano_program = pretty_midi.instrument_name_to_program('Acoustic Grand Piano')
+        piano = pretty_midi.Instrument(program=piano_program)
+
+        # Another option would be to use Synth Choir, however Oohs sound more appropriate as in Schubert, there is also
+        # only a single voice
+        voice_program = pretty_midi.instrument_name_to_program('Voice Oohs')
+        voice = pretty_midi.Instrument(program=voice_program)
+
+        for idx, row in ann_audio_note.iterrows():
+            onset: float = row['start']
+            offset: float = row['end']
+            pitch: int = row['pitch']
+            instrument: str = row['instrument']
+            note = pretty_midi.Note(start=onset, end=offset, pitch=pitch, velocity=64)
+            if instrument == 'piano':
+                piano.notes.append(note)
+            elif instrument == 'voice':
+                voice.notes.append(note)
+            else:
+                raise ValueError(f'Unknown instrument {instrument}')
+        file: pretty_midi.PrettyMIDI = pretty_midi.PrettyMIDI()
+        file.instruments.append(piano)
+        file.instruments.append(voice)
+        file.write(ann_audio_filepath)
+    return path
 
 
 def _check_pitch_time_intervals(intervals_dict):
