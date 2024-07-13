@@ -275,7 +275,7 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         """
         Args:
             group: group to return the filenames for. See self.available_groups() for the groups
-        Returns: List[Tuple[audio_filename, csv_filename]] is a List of all audio tsv file combinations for this piece
+        Returns: List[Tuple[audio_filepath, tsv_filepath]] is a List of all audio tsv file combinations for this piece
         """
         audio_filenames: List[str] = self.get_filenames_from_group(os.path.join(self.path, '01_RawData', 'audio_wav'),
                                                                    group)
@@ -373,4 +373,6 @@ class SchubertWinterreisePiano(SchubertWinterreiseDataset):
 
 
 class SchubertWinterreiseVoice(SchubertWinterreiseDataset):
-    ...
+    def files(self, group: str) -> List[Tuple]:
+
+        ...
