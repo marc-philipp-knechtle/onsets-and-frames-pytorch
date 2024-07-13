@@ -215,15 +215,7 @@ class MAPS(PianoRollAudioDataset):
 
 class SchubertWinterreiseDataset(PianoRollAudioDataset):
     r"""
-    Goal: train Onsets and Frames on Schubert Winterreise data:
-    Issues: We don't have one midi file assigned to a raw audio. We have a general score level midi file
-            Therefore, we can't just use the midi file and the raw audio for training.
-    Further Information:
-            We have different types of measurements, especially the ann_audio_measure measurement
-            Therefore, we can align these measurements with the midi -> warping the midi to match the measurement
-    Solution:   Using the annotations to match midi with the raw data
-                e.g. use ann_audio_measure -> Warp each measure
-                another option: ann_audio_structure
+    Goal: train Onsets and Frames on Schubert Winterreise data
     """
 
     def __init__(self,
@@ -374,5 +366,7 @@ class SchubertWinterreisePiano(SchubertWinterreiseDataset):
 
 class SchubertWinterreiseVoice(SchubertWinterreiseDataset):
     def files(self, group: str) -> List[Tuple]:
-
+        audio_filepaths: List[str] = super().get_filepaths_from_group(os.path.join(self.path, '01_RawData',
+                                                                                   'audio_wav_spleeter_separated'),
+                                                                      group)
         ...
