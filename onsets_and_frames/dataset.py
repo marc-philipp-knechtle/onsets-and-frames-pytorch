@@ -234,8 +234,8 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
                          sequence_length, seed, device)
 
     @staticmethod
-    def get_filenames_from_group(directory: str, regex_pattern) -> List[str]:
-        files = glob(os.path.join(directory, '*.wav'))
+    def get_filepaths_from_group(directory: str, regex_pattern) -> List[str]:
+        files = glob(os.path.join(directory, '*.wav'), recursive=True)
         matching_files = [file for file in files if re.compile(fr".*{re.escape(regex_pattern)}.*").search(file)]
         return matching_files
 
@@ -277,9 +277,9 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
             group: group to return the filenames for. See self.available_groups() for the groups
         Returns: List[Tuple[audio_filepath, tsv_filepath]] is a List of all audio tsv file combinations for this piece
         """
-        audio_filenames: List[str] = self.get_filenames_from_group(os.path.join(self.path, '01_RawData', 'audio_wav'),
+        audio_filepaths: List[str] = self.get_filepaths_from_group(os.path.join(self.path, '01_RawData', 'audio_wav'),
                                                                    group)
-        if len(audio_filenames) == 0:
+        if len(audio_filepaths) == 0:
             raise RuntimeError(f'Expected files for group {group}, found nothing.')
 
         ann_audio_note_filepaths_csv: List[str] = glob(
@@ -288,14 +288,14 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         midi_path = midi.save_csv_as_midi(ann_audio_note_filepaths_csv,
                                           os.path.join(self.path, '02_Annotations', 'ann_audio_note_midi'))
         midi_audio_filenames: List[str] = glob(os.path.join(midi_path, '*.mid'))
-        files_audio_audio_midi: List[Tuple[str, str]] = self.combine_audio_midi(audio_filenames, midi_audio_filenames)
+        files_audio_audio_midi: List[Tuple[str, str]] = self.combine_audio_midi(audio_filepaths, midi_audio_filenames)
 
         """
         The issue with this approach is that the midi_score_filenames are not individual transcriptions of the pieces. 
         However, they are just the score and each version is slightly different to the score! 
         """
         # midi_score_filenames: List[str] = glob(os.path.join(self.path, '01_RawData', 'score_midi', '*.mid'))
-        # files_audio_score_midi: List[Tuple[str, str]] = self.combine_audio_midi(audio_filenames, midi_score_filenames)
+        # files_audio_score_midi: List[Tuple[str, str]] = self.combine_audio_midi(audio_filepaths, midi_score_filenames)
         # This method also isn't necessary anymore once the audio transcription works!
         # ann_audio_globalkey: pd.DataFrame = pd.read_csv(
         #     os.path.join(self.path, '02_Annotations', 'ann_audio_globalkey.csv'), sep=';')
