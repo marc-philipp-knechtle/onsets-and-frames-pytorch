@@ -279,6 +279,8 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         """
         audio_filenames: List[str] = self.get_filenames_from_group(os.path.join(self.path, '01_RawData', 'audio_wav'),
                                                                    group)
+        if len(audio_filenames) == 0:
+            raise RuntimeError(f'Expected files for group {group}, found nothing.')
 
         ann_audio_note_filepaths_csv: List[str] = glob(
             os.path.join(self.path, '02_Annotations', 'ann_audio_note', '*.csv'))
