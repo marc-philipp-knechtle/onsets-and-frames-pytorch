@@ -190,6 +190,19 @@ def save_csv_as_midi(csv_filenames: List[str], path: str, instrument: str = 'all
     return path
 
 
+def create_tsv_from_midi(midi_filepath: str, tsv_filepath: str):
+    midi_filename: str = os.path.basename(midi_filepath)
+    logging.info(f'Parsing midi file: {os.path.basename(midi_filename)}.')
+    midifile: np.ndarray = parse_midi(midi_filepath)
+    # For some reason pycharm expects an int value in np.savetxt() midi is ofc not an int value.
+    # But this error is from pycharm. Therefore, the inspection is disabled here.
+    # noinspection PyTypeChecker
+    np.savetxt(fname=tsv_filepath, X=midifile, fmt='%.6f', delimiter='\t', header='onset,offset,note,velocity')
+
+    # Debugging: In case that there is some doubt that the tsv was correctly created -> create again midi from tsv
+    # save_np_arr_as_midi(midifile, str(os.path.join(os.path.dirname(tsv_filepath), midi_filename + '.mid')))
+
+
 def _check_pitch_time_intervals(intervals_dict):
     pitch: int
     for pitch in intervals_dict:
