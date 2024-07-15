@@ -68,15 +68,15 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
         validation_dataset = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
     elif train_on == 'Winterreise':
         # HU33 and SC06 are intended for testing because they are the public ones
-        dataset_training = SchubertWinterreiseDataset(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QUI98', 'TR99'],
+        dataset_training = SchubertWinterreiseDataset(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                                                       sequence_length=sequence_length)
         validation_dataset = SchubertWinterreiseDataset(groups=['AL98'], sequence_length=sequence_length)
     elif train_on == 'WinterreiseVoice':
-        dataset_training = SchubertWinterreiseVoice(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QUI98', 'TR99'],
+        dataset_training = SchubertWinterreiseVoice(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                                                     sequence_length=sequence_length)
         validation_dataset = SchubertWinterreiseVoice(groups=['AL98'], sequence_length=sequence_length)
     elif train_on == 'SchubertWinterreisePiano':
-        dataset_training = SchubertWinterreisePiano(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QUI98', 'TR99'],
+        dataset_training = SchubertWinterreisePiano(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                                                     sequence_length=sequence_length)
         validation_dataset = SchubertWinterreisePiano(groups=['AL98'], sequence_length=sequence_length)
     elif train_on == 'MAESTRO+Winterreise':
