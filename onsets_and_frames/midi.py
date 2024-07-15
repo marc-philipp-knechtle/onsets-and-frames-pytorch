@@ -192,7 +192,7 @@ def save_csv_as_midi(csv_filenames: List[str], path: str, instrument: str = 'all
 
 def create_tsv_from_midi(midi_filepath: str, tsv_filepath: str):
     midi_filename: str = os.path.basename(midi_filepath)
-    logging.info(f'Parsing midi file: {os.path.basename(midi_filename)}.')
+    logging.debug(f'Parsing midi file: {os.path.basename(midi_filename)}.')
     midifile: np.ndarray = parse_midi(midi_filepath)
     # For some reason pycharm expects an int value in np.savetxt() midi is ofc not an int value.
     # But this error is from pycharm. Therefore, the inspection is disabled here.
