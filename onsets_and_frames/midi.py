@@ -137,11 +137,12 @@ def save_np_arr_as_midi(midi_arr: np.ndarray, path: str):
     file.write(path)
 
 
-def save_csv_as_midi(csv_filenames: List[str], path: str) -> str:
+def save_csv_as_midi(csv_filenames: List[str], path: str, instrument: str = 'all') -> str:
     """
     Args:
         csv_filenames: csv files in the format: [onset_time, offset_time, pitch, pitchclass, instrument]
         path: where the MIDI files are stored
+        instrument: which instruments to save in the resulting midi
     Returns: path where the MIDI files are saved
     """
     if not os.path.exists(path):
@@ -176,8 +177,15 @@ def save_csv_as_midi(csv_filenames: List[str], path: str) -> str:
             else:
                 raise ValueError(f'Unknown instrument {instrument}')
         file: pretty_midi.PrettyMIDI = pretty_midi.PrettyMIDI()
-        file.instruments.append(piano)
-        file.instruments.append(voice)
+        if instrument == 'all':
+            file.instruments.append(piano)
+            file.instruments.append(voice)
+        elif instrument == 'voice':
+            file.instruments.append(voice)
+        elif instrument == 'piano':
+            file.instruments.append(piano)
+        else:
+            raise ValueError(f'Unknown instrument {instrument}')
         file.write(ann_audio_filepath)
     return path
 
