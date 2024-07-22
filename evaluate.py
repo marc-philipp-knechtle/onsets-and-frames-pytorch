@@ -56,14 +56,14 @@ def evaluate(data: Dataset, model: OnsetsAndFrames, onset_threshold=0.5, frame_t
         scaling = HOP_LENGTH / SAMPLE_RATE
 
         i_ref = (i_ref * scaling).reshape(-1, 2)
-        p_ref = np.array([midi_to_hz(MIN_MIDI + midi) for midi in p_ref])
+        p_ref = np.array([midi_to_hz(MIN_MIDI + midi_val) for midi_val in p_ref])
         i_est = (i_est * scaling).reshape(-1, 2)
-        p_est = np.array([midi_to_hz(MIN_MIDI + midi) for midi in p_est])
+        p_est = np.array([midi_to_hz(MIN_MIDI + midi_val) for midi_val in p_est])
 
         t_ref = t_ref.astype(np.float64) * scaling
-        f_ref = [np.array([midi_to_hz(MIN_MIDI + midi) for midi in freqs]) for freqs in f_ref]
+        f_ref = [np.array([midi_to_hz(MIN_MIDI + midi_val) for midi_val in freqs]) for freqs in f_ref]
         t_est = t_est.astype(np.float64) * scaling
-        f_est = [np.array([midi_to_hz(MIN_MIDI + midi) for midi in freqs]) for freqs in f_est]
+        f_est = [np.array([midi_to_hz(MIN_MIDI + midi_val) for midi_val in freqs]) for freqs in f_est]
 
         p, r, f, o = evaluate_notes(i_ref, p_ref, i_est, p_est, offset_ratio=None)
         metrics['metric/note/precision'].append(p)
