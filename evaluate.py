@@ -42,6 +42,7 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
         i_ref: np.ndarray
         v_ref: np.ndarray
         p_ref, i_ref, v_ref = extract_notes(label['onset'], label['frame'], label['velocity'])
+        t_ref, f_ref = notes_to_frames(p_ref, i_ref, label['frame'].shape)
         """
         estimate = prediction
         pitches 
@@ -50,8 +51,6 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
         """
         p_est, i_est, v_est = extract_notes(prediction['onset'], prediction['frame'], prediction['velocity'],
                                             onset_threshold, frame_threshold)
-
-        t_ref, f_ref = notes_to_frames(p_ref, i_ref, label['frame'].shape)
         t_est, f_est = notes_to_frames(p_est, i_est, prediction['frame'].shape)
 
         scaling = HOP_LENGTH / SAMPLE_RATE
