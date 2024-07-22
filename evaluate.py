@@ -4,6 +4,7 @@ import sys
 import logging
 from collections import defaultdict
 from datetime import datetime
+from typing import List
 
 import numpy as np
 from mir_eval.multipitch import evaluate as evaluate_frames
@@ -111,11 +112,7 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
 
 def evaluate_file(model_file: str, piano_roll_audio_dataset_name: str, dataset_group: str, sequence_length: int,
                   save_path: str, onset_threshold: float, frame_threshold: float, device: str):
-    dataset_class = getattr(dataset_module, piano_roll_audio_dataset_name)
-    kwargs = {'sequence_length': sequence_length, 'device': device}
-    if dataset_group is not None:
-        kwargs['groups'] = [dataset_group]
-    piano_roll_audio_dataset: dataset_module.PianoRollAudioDataset = dataset_class(**kwargs)
+    piano_roll_audio_dataset = determine_datasets(piano_roll_audio_dataset_name, dataset_group, sequence_length, device)
 
     model = torch.load(model_file, map_location=device).eval()
     summary(model)
@@ -127,6 +124,17 @@ def evaluate_file(model_file: str, piano_roll_audio_dataset_name: str, dataset_g
             _, category, name = key.split('/')
             print(f'{category:>32} {name:25}: {np.mean(values):.3f} ± {np.std(values):.3f}')
             logging.info(f'{category:>32} {name:25}: {np.mean(values):.3f} ± {np.std(values):.3f}')
+
+
+def determine_datasets(piano_roll_audio_dataset_name, dataset_group, sequence_length, device) \
+        -> dataset_module.PianoRollAudioDataset:
+    dataset_groups: List[str] = dataset_group.split(',')
+    dataset_class = getattr(dataset_module, piano_roll_audio_dataset_name)
+    kwargs = {'sequence_length': sequence_length, 'device': device}
+    if dataset_group is not None:
+        kwargs['groups'] = dataset_groups
+    piano_roll_audio_dataset: dataset_module.PianoRollAudioDataset = dataset_class(**kwargs)
+    return piano_roll_audio_dataset
 
 
 if __name__ == '__main__':
