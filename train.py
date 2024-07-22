@@ -18,7 +18,8 @@ from tqdm import tqdm
 
 from evaluate import evaluate
 from onsets_and_frames import *
-from onsets_and_frames.dataset import SchubertWinterreiseDataset, SchubertWinterreiseVoice, SchubertWinterreisePiano
+from onsets_and_frames.dataset import SchubertWinterreiseDataset, SchubertWinterreiseVoice, SchubertWinterreisePiano, \
+    PianoRollAudioDataset
 
 ex = Experiment('train_transcriber')
 
@@ -56,6 +57,8 @@ def config():
     validation_length = sequence_length
     validation_interval = 500
 
+    clear_computed: bool = True
+
     ex.observers.append(FileStorageObserver.create(logdir))
 
 
@@ -87,10 +90,10 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
         winterreise_validation = SchubertWinterreiseDataset(groups=['AL98'], sequence_length=sequence_length)
         dataset_training = ConcatDataset([maestro_training, winterreise_training])
         validation_dataset = ConcatDataset([maestro_validation, winterreise_validation])
-    elif train_on == 'all':
-        # todo
-        dataset_training = None
-        validation_dataset = None
+    # elif train_on == 'all':
+    # todo
+    # dataset_training = None
+    # validation_dataset = None
     else:
         dataset_training = MAPS(
             groups=['AkPnBcht', 'AkPnBsdf', 'AkPnCGdD', 'AkPnStgb', 'SptkBGAm', 'SptkBGCl', 'StbgTGd2'],
@@ -103,12 +106,15 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
                      device: str, iterations: int, learning_rate: float, learning_rate_decay_rate: float,
                      learning_rate_decay_steps: int, leave_one_out: bool, logdir: str, model_complexity: int,
                      resume_iteration: bool, sequence_length: int, train_on: str, validation_interval: int,
-                     validation_length: int, writer: SummaryWriter, ):
+                     validation_length: int, writer: SummaryWriter, clear_computed: bool):
     train_groups, validation_groups = ['train'], ['validation']
     if leave_one_out is not None:
         all_years = {'2004', '2006', '2008', '2009', '2011', '2013', '2014', '2015', '2017'}
         train_groups = list(all_years - {str(leave_one_out)})
         validation_groups = [str(leave_one_out)]
+
+    dataset_training: PianoRollAudioDataset
+    validation_dataset: PianoRollAudioDataset
     dataset_training, validation_dataset = create_datasets(sequence_length, train_groups, train_on, validation_groups,
                                                            validation_length)
     loader = DataLoader(dataset_training, batch_size, shuffle=True, drop_last=True)
@@ -116,9 +122,16 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
     summary(model)
     scheduler = StepLR(optimizer, step_size=learning_rate_decay_steps, gamma=learning_rate_decay_rate)
     loop = tqdm(range(resume_iteration + 1, iterations + 1))
-    for i, batch in zip(loop, cycle(loader)):
-        run_iteration(batch, checkpoint_interval, clip_gradient_norm, i, logdir, model, optimizer, scheduler,
-                      validation_dataset, validation_interval, writer)
+    try:
+        for i, batch in zip(loop, cycle(loader)):
+            run_iteration(batch, checkpoint_interval, clip_gradient_norm, i, logdir, model, optimizer, scheduler,
+                          validation_dataset, validation_interval, writer)
+    except Exception as e:
+        raise e
+    finally:
+        if clear_computed:
+            dataset_training.clear_computed()
+            validation_dataset.clear_computed()
 
 
 def create_model(device, learning_rate, logdir, model_complexity, resume_iteration):
@@ -180,7 +193,7 @@ def run_iteration(batch, checkpoint_interval, clip_gradient_norm, i, logdir, mod
 @ex.automain
 def train(logdir, device, iterations, resume_iteration, checkpoint_interval, train_on, batch_size, sequence_length,
           model_complexity, learning_rate, learning_rate_decay_steps, learning_rate_decay_rate, leave_one_out,
-          clip_gradient_norm, validation_length, validation_interval):
+          clip_gradient_norm, validation_length, validation_interval, clear_computed):
     print_config(ex.current_run)
 
     os.makedirs(logdir, exist_ok=True)
@@ -189,7 +202,8 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
     try:
         training_process(batch_size, checkpoint_interval, clip_gradient_norm, device, iterations, learning_rate,
                          learning_rate_decay_rate, learning_rate_decay_steps, leave_one_out, logdir, model_complexity,
-                         resume_iteration, sequence_length, train_on, validation_interval, validation_length, writer)
+                         resume_iteration, sequence_length, train_on, validation_interval, validation_length, writer,
+                         clear_computed)
     except Exception as e:
         writer.add_text('train/error', str(e))
         logging.error(str(e))

@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+import shutil
 from abc import abstractmethod
 from glob import glob
 from typing import List, Tuple
@@ -25,8 +26,8 @@ class PianoRollAudioDataset(Dataset):
         self.sequence_length = sequence_length
         self.device = device
         self.random = np.random.RandomState(seed)
-
         self.data = []
+
         print(f"Loading {len(groups)} group{'s' if len(groups) > 1 else ''} "
               f"of {self.__class__.__name__} at {path}")
         for group in groups:
@@ -78,6 +79,16 @@ class PianoRollAudioDataset(Dataset):
         """return the list of input files (audio_filename, tsv_filename) for this group"""
         raise NotImplementedError
 
+    def clear_computed(self):
+        logging.info("Clearing .pt files created by PianoRollAudioDataset.load().\n"
+                     "This is because clear_computed is set as true.\n"
+                     "The .pt files are created again for this run. For a faster execution you have to disable"
+                     "clear_computed.")
+        for root, dirs, files in os.walk(self.path):
+            for file in files:
+                if file.endswith(".pt"):
+                    os.remove(os.path.join(root, file))
+
     @staticmethod
     def load(audio_path: str, tsv_path: str) -> dict:
         """
@@ -109,9 +120,9 @@ class PianoRollAudioDataset(Dataset):
         # Conversion to fload see:
         # https://stackoverflow.com/questions/58810035/converting-audio-files-between-pydub-and-librosa
         audio: np.ndarray = np.array(audio).astype(np.float32)
-        if audio.shape[1] > 1:
+        if len(audio.shape) > 1:
             # Convert Stereo to Mono
-            logging.warning('Audio is twodimensional - this is a stereo file. Converting to mono!')
+            logging.warning('Audio is twodimensional - this is a stereo file! Converting to mono!')
             audio = audio.T
             audio = audio[0]
         if sr != SAMPLE_RATE:
@@ -240,10 +251,20 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
     r"""
     Goal: train Onsets and Frames on Schubert Winterreise data
     """
+    swd_midi: str
+    swd_csv: str
+    swd_tsv: str
+    swd_audio_wav: str
 
     def __init__(self,
                  path='data/Schubert_Winterreise_Dataset_v2-1', groups=None, sequence_length=None, seed=42,
                  device=DEFAULT_DEVICE):
+        # adding underscore to symbolize that these annotations are computationally created
+        self.swd_midi = os.path.join(path, '02_Annotations', '_ann_audio_note_midi')
+        self.swd_csv = os.path.join(path, '02_Annotations', 'ann_audio_note')
+        self.swd_tsv = os.path.join(path, '02_Annotations', '_ann_audio_note_tsv')
+        self.swd_audio_wav = os.path.join(path, '01_RawData', 'audio_wav')
+
         super().__init__(path,
                          groups if groups is not None else ['AL98', 'FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                          sequence_length, seed, device)
@@ -292,16 +313,13 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
             group: group to return the filenames for. See self.available_groups() for the groups
         Returns: List[Tuple[audio_filepath, tsv_filepath]] is a List of all audio tsv file combinations for this piece
         """
-        audio_filepaths: List[str] = self.get_filepaths_from_group(os.path.join(self.path, '01_RawData', 'audio_wav'),
-                                                                   group)
+        audio_filepaths: List[str] = self.get_filepaths_from_group(self.swd_audio_wav, group)
         if len(audio_filepaths) == 0:
             raise RuntimeError(f'Expected files for group {group}, found nothing.')
 
-        ann_audio_note_filepaths_csv: List[str] = glob(
-            os.path.join(self.path, '02_Annotations', 'ann_audio_note', '*.csv'))
-        # convert csv files into midi
-        midi_path = midi.save_csv_as_midi(ann_audio_note_filepaths_csv,
-                                          os.path.join(self.path, '02_Annotations', 'ann_audio_note_midi'))
+        ann_audio_note_filepaths_csv: List[str] = glob(os.path.join(self.swd_csv, '*.csv'))
+        # save csv as midi
+        midi_path = midi.save_csv_as_midi(ann_audio_note_filepaths_csv, self.swd_midi)
         midi_audio_filepaths: List[str] = glob(os.path.join(midi_path, '*.mid'))
         files_audio_audio_midi: List[Tuple[str, str]] = self.combine_audio_midi(audio_filepaths, midi_audio_filepaths)
 
@@ -316,8 +334,19 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         #     os.path.join(self.path, '02_Annotations', 'ann_audio_globalkey.csv'), sep=';')
 
         # This is List of Tuples containing the midi/audio combination for each file
+        # convert midi into tsv
         result = self.create_audio_tsv(files_audio_audio_midi)
         return result
+
+    def clear_computed(self):
+        logging.info(f'Clearing dirs {self.swd_midi} and {self.swd_tsv}.\n'
+                     f'This is because clear_computed is set to true. \n'
+                     f'They are recomputed. For a faster execution, you have to disable clear_computed.')
+        if os.path.exists(self.swd_midi):
+            shutil.rmtree(self.swd_midi)
+        if os.path.exists(self.swd_tsv):
+            shutil.rmtree(self.swd_tsv)
+        super().clear_computed()
 
     # todo refactor this like in SchubertWinterreiseVoice!
     def create_audio_tsv(self, files_audio_audio_midi: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
@@ -329,17 +358,14 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         result: List[Tuple[str, str]] = []
         audio_filename: str
         midi_filename: str
-        tsv_dir: str = os.path.join(self.path, '02_Annotations', 'ann_audio_note_tsv')
-        midi_dir = os.path.join(self.path, '02_Annotations', 'ann_audio_note_midi')
-        if not os.path.exists(tsv_dir):
-            os.makedirs(tsv_dir)
+        if not os.path.exists(self.swd_tsv):
+            os.makedirs(self.swd_tsv)
         for audio_filename, midi_filename in files_audio_audio_midi:
             tsv_filename = audio_filename.replace('.mid', '.tsv').replace('.wav', '.tsv')
-            if not os.path.exists(os.path.join(tsv_dir, tsv_filename)):
-                midi.create_tsv_from_midi(os.path.join(midi_dir, midi_filename),
-                                          os.path.join(tsv_dir, tsv_filename))
-            result.append((os.path.join(self.path, '01_RawData', 'audio_wav', audio_filename),
-                           os.path.join(tsv_dir, tsv_filename)))
+            if not os.path.exists(os.path.join(self.swd_tsv, tsv_filename)):
+                midi.create_tsv_from_midi(os.path.join(self.swd_midi, midi_filename),
+                                          os.path.join(self.swd_tsv, tsv_filename))
+            result.append((os.path.join(self.swd_audio_wav, audio_filename), os.path.join(self.swd_tsv, tsv_filename)))
         return result
 
     # This is deprecated in favor of the new midi handling where the files are completely annotated
@@ -381,6 +407,20 @@ class SchubertWinterreisePiano(SchubertWinterreiseDataset):
 
 
 class SchubertWinterreiseVoice(SchubertWinterreiseDataset):
+    swd_vocal_midi: str
+    swd_vocal_tsv: str
+    swd_vocal_wav: str
+
+    def __init__(self,
+                 path='data/Schubert_Winterreise_Dataset_v2-1', groups=None, sequence_length=None, seed=42,
+                 device=DEFAULT_DEVICE):
+        # adding underscore to symbolize that these annotations are computationally created
+        self.swd_vocal_wav = os.path.join(path, '01_RawData', 'audio_wav_spleeter_separated')
+        self.swd_vocal_midi = os.path.join(path, '02_Annotations', '_ann_audio_voice_midi')
+        self.swd_vocal_tsv = os.path.join(path, '02_Annotations', '_ann_audio_voice_tsv')
+        super().__init__(path,
+                         groups if groups is not None else ['AL98', 'FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
+                         sequence_length, seed, device)
 
     @staticmethod
     def combine_audio_midi(audio_filepaths: List[str], midi_filepaths: List[str]) -> List[Tuple[str, str]]:
@@ -408,33 +448,37 @@ class SchubertWinterreiseVoice(SchubertWinterreiseDataset):
         result: List[Tuple[str, str]] = []
         audio_filepath: str
         midi_filepath: str
-        tsv_dir: str = os.path.join(self.path, '02_annotations', 'ann_audio_voice_tsv')
-        if not os.path.exists(tsv_dir):
-            os.makedirs(tsv_dir)
+        if not os.path.exists(self.swd_vocal_tsv):
+            os.makedirs(self.swd_vocal_tsv)
         for audio_filepath, midi_filepath in filepaths_audio_midi:
-            tsv_filepath = os.path.join(tsv_dir, os.path.basename(midi_filepath).replace('.mid', '.tsv'))
+            tsv_filepath = os.path.join(self.swd_vocal_tsv, os.path.basename(midi_filepath).replace('.mid', '.tsv'))
             if not os.path.exists(tsv_filepath):
                 midi.create_tsv_from_midi(midi_filepath, tsv_filepath)
             result.append((audio_filepath, tsv_filepath))
         return result
 
     def files(self, group: str) -> List[Tuple]:
-        audio_filepaths: List[str] = super().get_filepaths_from_group(os.path.join(self.path, '01_RawData',
-                                                                                   'audio_wav_spleeter_separated'),
-                                                                      group)
+        audio_filepaths: List[str] = super().get_filepaths_from_group(self.swd_vocal_wav, group)
         voice_audio_filepaths: List[str] = []
         for path in audio_filepaths:
             if path.__contains__('vocals'):
                 voice_audio_filepaths.append(path)
         if len(voice_audio_filepaths) == 0:
             raise RuntimeError(f'Expected files for group {group}, found nothing.')
-        ann_audio_note_filepaths_csv: List[str] = glob(
-            os.path.join(self.path, '02_Annotations', 'ann_audio_note', '*.csv'))
-        midi_path = midi.save_csv_as_midi(ann_audio_note_filepaths_csv,
-                                          os.path.join(self.path, '02_Annotations', 'ann_audio_voice_midi'),
-                                          instrument='voice')
+        ann_audio_note_filepaths_csv: List[str] = glob(os.path.join(super().swd_csv, '*.csv'))
+        midi_path = midi.save_csv_as_midi(ann_audio_note_filepaths_csv, self.swd_vocal_midi, instrument='voice')
         midi_voice_filepaths: List[str] = glob(os.path.join(midi_path, '*.mid'))
         files_voice_midi_filepaths: List[Tuple[str, str]] = self.combine_audio_midi(voice_audio_filepaths,
                                                                                     midi_voice_filepaths)
         voice_tsv_filepaths = self.create_audio_tsv(files_voice_midi_filepaths)
         return voice_tsv_filepaths
+
+    def clear_computed(self):
+        logging.info(f'Clearing dirs {self.swd_midi} and {self.swd_tsv}.\n'
+                     f'This is because clear_computed is set to true. \n'
+                     f'They are recomputed. For a faster execution, you have to disable clear_computed.')
+        if os.path.exists(self.swd_midi):
+            shutil.rmtree(self.swd_midi)
+        if os.path.exists(self.swd_tsv):
+            shutil.rmtree(self.swd_tsv)
+        super().clear_computed()
