@@ -109,8 +109,8 @@ def evaluate(data: Dataset, model: OnsetsAndFrames, onset_threshold=0.5, frame_t
     return metrics
 
 
-def evaluate_file(model_file, piano_roll_audio_dataset, dataset_group, sequence_length, save_path,
-                  onset_threshold, frame_threshold, device):
+def evaluate_file(model_file: str, piano_roll_audio_dataset: str, dataset_group: str, sequence_length: int,
+                  save_path: str, onset_threshold: float, frame_threshold: float, device: str):
     dataset_class = getattr(dataset_module, piano_roll_audio_dataset)
     kwargs = {'sequence_length': sequence_length, 'device': device}
     if dataset_group is not None:
