@@ -109,18 +109,18 @@ def evaluate(data: Dataset, model: OnsetsAndFrames, onset_threshold=0.5, frame_t
     return metrics
 
 
-def evaluate_file(model_file, dataset, dataset_group, sequence_length, save_path,
+def evaluate_file(model_file, piano_roll_audio_dataset, dataset_group, sequence_length, save_path,
                   onset_threshold, frame_threshold, device):
-    dataset_class = getattr(dataset_module, dataset)
+    dataset_class = getattr(dataset_module, piano_roll_audio_dataset)
     kwargs = {'sequence_length': sequence_length, 'device': device}
     if dataset_group is not None:
         kwargs['groups'] = [dataset_group]
-    dataset = dataset_class(**kwargs)
+    piano_roll_audio_dataset = dataset_class(**kwargs)
 
     model = torch.load(model_file, map_location=device).eval()
     summary(model)
 
-    metrics: dict = evaluate(tqdm(dataset), model, onset_threshold, frame_threshold, save_path)
+    metrics: dict = evaluate(tqdm(piano_roll_audio_dataset), model, onset_threshold, frame_threshold, save_path)
 
     for key, values in metrics.items():
         if key.startswith('metric/'):
