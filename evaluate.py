@@ -24,12 +24,12 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
     metrics = defaultdict(list)
 
     for label in tqdm(pianoroll_dataset):
-        pred, losses = model.run_on_batch(label)
+        prediction, losses = model.run_on_batch(label)
 
         for key, loss in losses.items():
             metrics[key].append(loss.item())
 
-        for key, value in pred.items():
+        for key, value in prediction.items():
             value.squeeze_(0).relu_()
 
         """
@@ -48,11 +48,11 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
         intervals
         velocities
         """
-        p_est, i_est, v_est = extract_notes(pred['onset'], pred['frame'], pred['velocity'], onset_threshold,
-                                            frame_threshold)
+        p_est, i_est, v_est = extract_notes(prediction['onset'], prediction['frame'], prediction['velocity'],
+                                            onset_threshold, frame_threshold)
 
         t_ref, f_ref = notes_to_frames(p_ref, i_ref, label['frame'].shape)
-        t_est, f_est = notes_to_frames(p_est, i_est, pred['frame'].shape)
+        t_est, f_est = notes_to_frames(p_est, i_est, prediction['frame'].shape)
 
         scaling = HOP_LENGTH / SAMPLE_RATE
 
@@ -103,7 +103,7 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
             label_path: str = str(os.path.join(save_path, os.path.basename(label['path']) + '.label.png'))
             save_pianoroll(label_path, label['onset'], label['frame'])
             pred_path: str = str(os.path.join(save_path, os.path.basename(label['path']) + '.pred.png'))
-            save_pianoroll(pred_path, pred['onset'], pred['frame'])
+            save_pianoroll(pred_path, prediction['onset'], prediction['frame'])
             midi_path: str = str(os.path.join(save_path, os.path.basename(label['path']) + '.pred.mid'))
             save_midi(midi_path, p_est, i_est, v_est)
 
