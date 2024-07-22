@@ -220,8 +220,8 @@ class MAESTRO(PianoRollAudioDataset):
                              os.path.join(self.path, row['midi_filename'])) for row in metadata if
                             row['split'] == group])
 
-            files = [(audio if os.path.exists(audio) else audio.replace('.flac', '.wav'), midi) for audio, midi in
-                     files]
+            files = [(audio if os.path.exists(audio) else audio.replace('.flac', '.wav'), midi_filename) for
+                     audio, midi_filename in files]
 
         result = []
         audio_path: str
@@ -229,11 +229,11 @@ class MAESTRO(PianoRollAudioDataset):
         for audio_path, midi_path in files:
             tsv_filename = midi_path.replace('.midi', '.tsv').replace('.mid', '.tsv')
             if not os.path.exists(tsv_filename):
-                midi: np.ndarray = parse_midi(midi_path)
-                # midi is an array consisting of onset, offset, note and velocity
+                midi_arr: np.ndarray = parse_midi(midi_path)
+                # midi_arr is an array consisting of onset, offset, note and velocity
                 # See other explanation on np.savetxt
                 # noinspection PyTypeChecker
-                np.savetxt(tsv_filename, midi, fmt='%.6f', delimiter='\t', header='onset,offset,note,velocity')
+                np.savetxt(tsv_filename, midi_arr, fmt='%.6f', delimiter='\t', header='onset,offset,note,velocity')
             result.append((audio_path, tsv_filename))
         return result
 
