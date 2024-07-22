@@ -109,9 +109,9 @@ def evaluate(data: Dataset, model: OnsetsAndFrames, onset_threshold=0.5, frame_t
     return metrics
 
 
-def evaluate_file(model_file: str, piano_roll_audio_dataset: str, dataset_group: str, sequence_length: int,
+def evaluate_file(model_file: str, piano_roll_audio_dataset_name: str, dataset_group: str, sequence_length: int,
                   save_path: str, onset_threshold: float, frame_threshold: float, device: str):
-    dataset_class = getattr(dataset_module, piano_roll_audio_dataset)
+    dataset_class = getattr(dataset_module, piano_roll_audio_dataset_name)
     kwargs = {'sequence_length': sequence_length, 'device': device}
     if dataset_group is not None:
         kwargs['groups'] = [dataset_group]
@@ -132,7 +132,7 @@ def evaluate_file(model_file: str, piano_roll_audio_dataset: str, dataset_group:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('model_file', type=str)
-    parser.add_argument('piano_roll_audio_dataset', nargs='?', default='MAPS')
+    parser.add_argument('piano_roll_audio_dataset_name', nargs='?', default='MAPS')
     parser.add_argument('dataset_group', nargs='?', default=None)
     parser.add_argument('--save-path', default=None)
     parser.add_argument('--sequence-length', default=None, type=int)
