@@ -12,17 +12,18 @@ from mir_eval.transcription_velocity import precision_recall_f1_overlap as evalu
 from mir_eval.util import midi_to_hz
 from scipy.stats import hmean
 from tqdm import tqdm
-from torch.utils.data import Dataset
+from torch.utils.data import IterableDataset
 import onsets_and_frames.dataset as dataset_module
 from onsets_and_frames import *
 
 eps = sys.float_info.epsilon
 
 
-def evaluate(data: Dataset, model: OnsetsAndFrames, onset_threshold=0.5, frame_threshold=0.5, save_path=None) -> dict:
+def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_threshold=0.5,
+             frame_threshold=0.5, save_path=None) -> dict:
     metrics = defaultdict(list)
 
-    for label in data:
+    for label in tqdm(pianoroll_dataset):
         pred, losses = model.run_on_batch(label)
 
         for key, loss in losses.items():
@@ -99,11 +100,11 @@ def evaluate(data: Dataset, model: OnsetsAndFrames, onset_threshold=0.5, frame_t
 
         if save_path is not None:
             os.makedirs(save_path, exist_ok=True)
-            label_path = os.path.join(save_path, os.path.basename(label['path']) + '.label.png')
+            label_path: str = str(os.path.join(save_path, os.path.basename(label['path']) + '.label.png'))
             save_pianoroll(label_path, label['onset'], label['frame'])
-            pred_path = os.path.join(save_path, os.path.basename(label['path']) + '.pred.png')
+            pred_path: str = str(os.path.join(save_path, os.path.basename(label['path']) + '.pred.png'))
             save_pianoroll(pred_path, pred['onset'], pred['frame'])
-            midi_path = os.path.join(save_path, os.path.basename(label['path']) + '.pred.mid')
+            midi_path: str = str(os.path.join(save_path, os.path.basename(label['path']) + '.pred.mid'))
             save_midi(midi_path, p_est, i_est, v_est)
 
     return metrics
@@ -120,7 +121,7 @@ def evaluate_file(model_file: str, piano_roll_audio_dataset_name: str, dataset_g
     model = torch.load(model_file, map_location=device).eval()
     summary(model)
 
-    metrics: dict = evaluate(tqdm(piano_roll_audio_dataset), model, onset_threshold, frame_threshold, save_path)
+    metrics: dict = evaluate(piano_roll_audio_dataset, model, onset_threshold, frame_threshold, save_path)
 
     for key, values in metrics.items():
         if key.startswith('metric/'):

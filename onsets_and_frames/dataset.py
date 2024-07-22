@@ -5,13 +5,13 @@ import re
 import shutil
 from abc import abstractmethod
 from glob import glob
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 import librosa
 import numpy as np
 import soundfile
 
-from torch.utils.data import Dataset
+from torch.utils.data import IterableDataset
 from tqdm import tqdm
 
 from . import midi
@@ -19,7 +19,14 @@ from .constants import *
 from .midi import parse_midi
 
 
-class PianoRollAudioDataset(Dataset):
+class PianoRollAudioDataset(IterableDataset):
+    path: str
+    groups: List[str]
+    sequence_length: int
+    device: str
+    random: np.random.RandomState
+    data: List[Dict]
+
     def __init__(self, path, groups=None, sequence_length=None, seed=42, device=DEFAULT_DEVICE):
         self.path = path
         self.groups = groups if groups is not None else self.available_groups()
@@ -67,6 +74,10 @@ class PianoRollAudioDataset(Dataset):
 
     def __len__(self):
         return len(self.data)
+
+    def __iter__(self):
+        for i in range(len(self.data)):
+            yield self[i]
 
     @classmethod
     @abstractmethod
