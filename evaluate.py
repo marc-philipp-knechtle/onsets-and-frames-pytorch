@@ -115,7 +115,7 @@ def evaluate_file(model_file: str, piano_roll_audio_dataset_name: str, dataset_g
     kwargs = {'sequence_length': sequence_length, 'device': device}
     if dataset_group is not None:
         kwargs['groups'] = [dataset_group]
-    piano_roll_audio_dataset = dataset_class(**kwargs)
+    piano_roll_audio_dataset: dataset_module.PianoRollAudioDataset = dataset_class(**kwargs)
 
     model = torch.load(model_file, map_location=device).eval()
     summary(model)
