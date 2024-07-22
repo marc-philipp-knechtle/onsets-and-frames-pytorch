@@ -132,7 +132,7 @@ def evaluate_file(model_file: str, piano_roll_audio_dataset: str, dataset_group:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('model_file', type=str)
-    parser.add_argument('dataset', nargs='?', default='MAPS')
+    parser.add_argument('piano_roll_audio_dataset', nargs='?', default='MAPS')
     parser.add_argument('dataset_group', nargs='?', default=None)
     parser.add_argument('--save-path', default=None)
     parser.add_argument('--sequence-length', default=None, type=int)
