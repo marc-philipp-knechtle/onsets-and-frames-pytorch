@@ -120,11 +120,19 @@ def evaluate_file(model_file: str, piano_roll_audio_dataset_name: str, dataset_g
 
     metrics: dict = evaluate(piano_roll_audio_dataset, model, onset_threshold, frame_threshold, save_path)
 
+    total_eval_str: str = ''
     for key, values in metrics.items():
         if key.startswith('metric/'):
             _, category, name = key.split('/')
-            print(f'{category:>32} {name:25}: {np.mean(values):.3f} ± {np.std(values):.3f}')
-            logging.info(f'{category:>32} {name:25}: {np.mean(values):.3f} ± {np.std(values):.3f}')
+            eval_str: str = f'{category:>32} {name:25}: {np.mean(values):.3f} ± {np.std(values):.3f}'
+            print(eval_str)
+            logging.info(eval_str)
+            total_eval_str += eval_str + '\n'
+
+    if save_path is not None:
+        metrics_filepath = os.path.join(save_path, f'metrics-{piano_roll_audio_dataset_name}.txt')
+        with open(metrics_filepath, 'w') as f:
+            f.write(total_eval_str)
 
 
 def determine_datasets(piano_roll_audio_dataset_name, dataset_group, sequence_length, device) \
