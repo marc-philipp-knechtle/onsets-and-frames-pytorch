@@ -159,9 +159,11 @@ if __name__ == '__main__':
 
     save_path_arg = parser.parse_args().save_path
     if save_path_arg is not None:
-        if len(os.listdir(save_path_arg)) > 0:
+        if os.path.exists(save_path_arg) and len(os.listdir(save_path_arg)) > 0:
             logging.warning(f'save_path {save_path_arg} is not empty. Clearing directory!')
             shutil.rmtree(save_path_arg)
+        elif not os.path.exists(save_path_arg):
+            os.makedirs(save_path_arg)
 
     # this is written like this for the docker container
     logging_filepath = os.path.join('runs', 'evaluation' + datetime.now().strftime('%y%m%d-%H%M') + '.log')
