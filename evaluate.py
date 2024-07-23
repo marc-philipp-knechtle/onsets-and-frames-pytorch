@@ -149,11 +149,11 @@ if __name__ == '__main__':
     parser.add_argument('--frame-threshold', default=0.5, type=float)
     parser.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
 
-    save_path = parser.parse_args().save_path
-    if save_path is not None:
-        if len(os.listdir(save_path)) > 0:
-            logging.warning(f'save_path {save_path} is not empty. Clearing directory!')
-            shutil.rmtree(save_path)
+    save_path_arg = parser.parse_args().save_path
+    if save_path_arg is not None:
+        if len(os.listdir(save_path_arg)) > 0:
+            logging.warning(f'save_path {save_path_arg} is not empty. Clearing directory!')
+            shutil.rmtree(save_path_arg)
 
     # this is written like this for the docker container
     logging_filepath = os.path.join('runs', 'evaluation' + datetime.now().strftime('%y%m%d-%H%M') + '.log')
