@@ -165,8 +165,9 @@ if __name__ == '__main__':
         elif not os.path.exists(save_path_arg):
             os.makedirs(save_path_arg)
 
-    # this is written like this for the docker container
-    logging_filepath = os.path.join('runs', 'evaluation' + datetime.now().strftime('%y%m%d-%H%M') + '.log')
+    dataset_name: str = parser.parse_args().piano_roll_audio_dataset_name
+    datetime_str: str = datetime.now().strftime('%y%m%d-%H%M')
+    logging_filepath = os.path.join('runs', f'evaluation-{dataset_name}-{datetime_str}.log')
     logging.basicConfig(filename=logging_filepath, level=logging.INFO)
     if not os.path.exists(logging_filepath):
         raise Exception('logging file was not created!')
