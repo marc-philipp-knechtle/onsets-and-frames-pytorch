@@ -8,7 +8,7 @@ spec:
       priorityClassName: research-med
       containers:
         - name: *jobname
-          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-evaluation:0.0.2
+          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-evaluation:0.0.3
           imagePullPolicy: "IfNotPresent"
           env:
               - name: DATADIR
@@ -23,8 +23,7 @@ spec:
               cpu: "16"
               memory: "32Gi"
             requests: *resources # sets requests = limits
-          # todo adding other modules
-          # todo adding save path
+          # command: ["python3", "evaluate.py", "models/model-500000.pt", "MAESTRO", "test", "--save-path=runs/MAESTRO"]
           command: ["python3", "evaluate.py", "models/model-500000.pt", "MAESTRO", "test", "--save-path=runs/MAESTRO"]
           # This command was used for debugging of the pods (infinite sleeping)
           # command: ["/bin/bash", "-c", "--"]
