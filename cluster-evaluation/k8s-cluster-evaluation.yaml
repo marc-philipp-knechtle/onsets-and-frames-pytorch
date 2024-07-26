@@ -38,58 +38,58 @@ spec:
                 name: &ceph_models models
               - mountPath: /dev/shm # fixes a common pytorch issue. just always mount this here
                 name: dshm
-        - name: onsets-and-frames-evaluation-schubert-winterreise
-          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-evaluation:0.0.2
-          imagePullPolicy: "IfNotPresent"
-          env:
-              - name: DATADIR
-                value: "/workspace/data"
-              - name: WORKSPACE
-                value: "/workspace"
-              - name: NUMBA_CACHE_DIR
-                value: "/tmp/numba_cache"
-          resources:
-              limits: &resources
-                nvidia.com/gpu: "1"
-                cpu: "16"
-                memory: "32Gi"
-              requests: *resources # sets requests = limits
-          command: ["python3", "evaluate.py", "models/model-500000.pt", "SchubertWinterreiseDataset", "HU33,SC06", "--save-path=runs/SchubertWinterreise"]
-          volumeMounts:
-              - mountPath: /workspace/data # directory IN the container
-                name: &ceph_data data # matches volume-name from below
-              - mountPath: /workspace/runs # directory IN the container
-                name: &ceph_runs runs # matches volume-name from below
-              - mountPath: /workspace/models
-                name: &ceph_models models
-              - mountPath: /dev/shm # fixes a common pytorch issue. just always mount this here
-                name: dshm
-        - name: onsets-and-frames-evaluation-schubert-winterreise-voice
-          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-evaluation:0.0.2
-          imagePullPolicy: "IfNotPresent"
-          env:
-              - name: DATADIR
-                value: "/workspace/data"
-              - name: WORKSPACE
-                value: "/workspace"
-              - name: NUMBA_CACHE_DIR
-                value: "/tmp/numba_cache"
-          resources:
-              limits: &resources
-                nvidia.com/gpu: "1"
-                cpu: "16"
-                memory: "32Gi"
-              requests: *resources # sets requests = limits
-          command: ["python3", "evaluate.py", "models/model-500000.pt", "SchubertWinterreiseVoice", "HU33,SC06", "--save-path=runs/SchubertWinterreiseVoice"]
-          volumeMounts:
-              - mountPath: /workspace/data # directory IN the container
-                name: &ceph_data data # matches volume-name from below
-              - mountPath: /workspace/runs # directory IN the container
-                name: &ceph_runs runs # matches volume-name from below
-              - mountPath: /workspace/models
-                name: &ceph_models models
-              - mountPath: /dev/shm # fixes a common pytorch issue. just always mount this here
-                name: dshm
+#         - name: onsets-and-frames-evaluation-schubert-winterreise
+#           image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-evaluation:0.0.2
+#           imagePullPolicy: "IfNotPresent"
+#           env:
+#               - name: DATADIR
+#                 value: "/workspace/data"
+#               - name: WORKSPACE
+#                 value: "/workspace"
+#               - name: NUMBA_CACHE_DIR
+#                 value: "/tmp/numba_cache"
+#           resources:
+#               limits: &resources
+#                 nvidia.com/gpu: "1"
+#                 cpu: "16"
+#                 memory: "32Gi"
+#               requests: *resources # sets requests = limits
+#           command: ["python3", "evaluate.py", "models/model-500000.pt", "SchubertWinterreiseDataset", "HU33,SC06", "--save-path=runs/SchubertWinterreise"]
+#           volumeMounts:
+#               - mountPath: /workspace/data # directory IN the container
+#                 name: &ceph_data data # matches volume-name from below
+#               - mountPath: /workspace/runs # directory IN the container
+#                 name: &ceph_runs runs # matches volume-name from below
+#               - mountPath: /workspace/models
+#                 name: &ceph_models models
+#               - mountPath: /dev/shm # fixes a common pytorch issue. just always mount this here
+#                 name: dshm
+#         - name: onsets-and-frames-evaluation-schubert-winterreise-voice
+#           image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-evaluation:0.0.2
+#           imagePullPolicy: "IfNotPresent"
+#           env:
+#               - name: DATADIR
+#                 value: "/workspace/data"
+#               - name: WORKSPACE
+#                 value: "/workspace"
+#               - name: NUMBA_CACHE_DIR
+#                 value: "/tmp/numba_cache"
+#           resources:
+#               limits: &resources
+#                 nvidia.com/gpu: "1"
+#                 cpu: "16"
+#                 memory: "32Gi"
+#               requests: *resources # sets requests = limits
+#           command: ["python3", "evaluate.py", "models/model-500000.pt", "SchubertWinterreiseVoice", "HU33,SC06", "--save-path=runs/SchubertWinterreiseVoice"]
+#           volumeMounts:
+#               - mountPath: /workspace/data # directory IN the container
+#                 name: &ceph_data data # matches volume-name from below
+#               - mountPath: /workspace/runs # directory IN the container
+#                 name: &ceph_runs runs # matches volume-name from below
+#               - mountPath: /workspace/models
+#                 name: &ceph_models models
+#               - mountPath: /dev/shm # fixes a common pytorch issue. just always mount this here
+#                 name: dshm
       imagePullSecrets:
         - name: lsx-registry
       restartPolicy: "Never"
