@@ -477,6 +477,7 @@ class SchubertWinterreiseVoice(SchubertWinterreiseDataset):
         if len(voice_audio_filepaths) == 0:
             raise RuntimeError(f'Expected files for group {group}, found nothing.')
         ann_audio_note_filepaths_csv: List[str] = glob(os.path.join(super().swd_csv, '*.csv'))
+        assert len(ann_audio_note_filepaths_csv) > 0
         midi_path = midi.save_csv_as_midi(ann_audio_note_filepaths_csv, self.swd_vocal_midi, instrument='voice')
         midi_voice_filepaths: List[str] = glob(os.path.join(midi_path, '*.mid'))
         files_voice_midi_filepaths: List[Tuple[str, str]] = self.combine_audio_midi(voice_audio_filepaths,
