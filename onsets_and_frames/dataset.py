@@ -421,6 +421,7 @@ class SchubertWinterreiseVoice(SchubertWinterreiseDataset):
     swd_vocal_midi: str
     swd_vocal_tsv: str
     swd_vocal_wav: str
+    swd_csv: str
 
     def __init__(self,
                  path='data/Schubert_Winterreise_Dataset_v2-1', groups=None, sequence_length=None, seed=42,
@@ -429,6 +430,7 @@ class SchubertWinterreiseVoice(SchubertWinterreiseDataset):
         self.swd_vocal_wav = os.path.join(path, '01_RawData', 'audio_wav_spleeter_separated')
         self.swd_vocal_midi = os.path.join(path, '02_Annotations', '_ann_audio_voice_midi')
         self.swd_vocal_tsv = os.path.join(path, '02_Annotations', '_ann_audio_voice_tsv')
+        self.swd_csv = os.path.join(path, '02_Annotations', 'ann_audio_note')
         super().__init__(path,
                          groups if groups is not None else ['AL98', 'FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                          sequence_length, seed, device)
@@ -476,7 +478,7 @@ class SchubertWinterreiseVoice(SchubertWinterreiseDataset):
                 voice_audio_filepaths.append(path)
         if len(voice_audio_filepaths) == 0:
             raise RuntimeError(f'Expected files for group {group}, found nothing.')
-        ann_audio_note_filepaths_csv: List[str] = glob(os.path.join(super().swd_csv, '*.csv'))
+        ann_audio_note_filepaths_csv: List[str] = glob(os.path.join(self.swd_csv, '*.csv'))
         assert len(ann_audio_note_filepaths_csv) > 0
         midi_path = midi.save_csv_as_midi(ann_audio_note_filepaths_csv, self.swd_vocal_midi, instrument='voice')
         midi_voice_filepaths: List[str] = glob(os.path.join(midi_path, '*.mid'))
