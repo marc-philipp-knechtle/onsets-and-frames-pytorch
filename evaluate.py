@@ -169,7 +169,7 @@ if __name__ == '__main__':
     datetime_str: str = datetime.now().strftime('%y%m%d-%H%M')
     logging_filepath = os.path.join('runs', f'evaluation-{dataset_name}-{datetime_str}.log')
     # filemode=a -> append
-    logging.basicConfig(filename=logging_filepath, encoding='utf-8', filemode='a', level=logging.INFO)
+    logging.basicConfig(filename=logging_filepath, filemode="a", level=logging.INFO)
     if not os.path.exists(logging_filepath):
         raise Exception('logging file was not created!')
 
