@@ -1,9 +1,11 @@
 import argparse
 import os
+import shutil
 import sys
 import logging
 from collections import defaultdict
 from datetime import datetime
+from typing import List
 
 import numpy as np
 from mir_eval.multipitch import evaluate as evaluate_frames
@@ -12,23 +14,24 @@ from mir_eval.transcription_velocity import precision_recall_f1_overlap as evalu
 from mir_eval.util import midi_to_hz
 from scipy.stats import hmean
 from tqdm import tqdm
-from torch.utils.data import Dataset
+from torch.utils.data import IterableDataset
 import onsets_and_frames.dataset as dataset_module
 from onsets_and_frames import *
 
 eps = sys.float_info.epsilon
 
 
-def evaluate(data: Dataset, model: OnsetsAndFrames, onset_threshold=0.5, frame_threshold=0.5, save_path=None) -> dict:
+def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_threshold=0.5,
+             frame_threshold=0.5, save_path=None) -> dict:
     metrics = defaultdict(list)
 
-    for label in data:
-        pred, losses = model.run_on_batch(label)
+    for label in tqdm(pianoroll_dataset):
+        prediction, losses = model.run_on_batch(label)
 
         for key, loss in losses.items():
             metrics[key].append(loss.item())
 
-        for key, value in pred.items():
+        for key, value in prediction.items():
             value.squeeze_(0).relu_()
 
         """
@@ -41,29 +44,28 @@ def evaluate(data: Dataset, model: OnsetsAndFrames, onset_threshold=0.5, frame_t
         i_ref: np.ndarray
         v_ref: np.ndarray
         p_ref, i_ref, v_ref = extract_notes(label['onset'], label['frame'], label['velocity'])
+        t_ref, f_ref = notes_to_frames(p_ref, i_ref, label['frame'].shape)
         """
         estimate = prediction
         pitches 
         intervals
         velocities
         """
-        p_est, i_est, v_est = extract_notes(pred['onset'], pred['frame'], pred['velocity'], onset_threshold,
-                                            frame_threshold)
-
-        t_ref, f_ref = notes_to_frames(p_ref, i_ref, label['frame'].shape)
-        t_est, f_est = notes_to_frames(p_est, i_est, pred['frame'].shape)
+        p_est, i_est, v_est = extract_notes(prediction['onset'], prediction['frame'], prediction['velocity'],
+                                            onset_threshold, frame_threshold)
+        t_est, f_est = notes_to_frames(p_est, i_est, prediction['frame'].shape)
 
         scaling = HOP_LENGTH / SAMPLE_RATE
 
         i_ref = (i_ref * scaling).reshape(-1, 2)
-        p_ref = np.array([midi_to_hz(MIN_MIDI + midi) for midi in p_ref])
+        p_ref = np.array([midi_to_hz(MIN_MIDI + midi_val) for midi_val in p_ref])
         i_est = (i_est * scaling).reshape(-1, 2)
-        p_est = np.array([midi_to_hz(MIN_MIDI + midi) for midi in p_est])
+        p_est = np.array([midi_to_hz(MIN_MIDI + midi_val) for midi_val in p_est])
 
         t_ref = t_ref.astype(np.float64) * scaling
-        f_ref = [np.array([midi_to_hz(MIN_MIDI + midi) for midi in freqs]) for freqs in f_ref]
+        f_ref = [np.array([midi_to_hz(MIN_MIDI + midi_val) for midi_val in freqs]) for freqs in f_ref]
         t_est = t_est.astype(np.float64) * scaling
-        f_est = [np.array([midi_to_hz(MIN_MIDI + midi) for midi in freqs]) for freqs in f_est]
+        f_est = [np.array([midi_to_hz(MIN_MIDI + midi_val) for midi_val in freqs]) for freqs in f_est]
 
         p, r, f, o = evaluate_notes(i_ref, p_ref, i_est, p_est, offset_ratio=None)
         metrics['metric/note/precision'].append(p)
@@ -99,40 +101,55 @@ def evaluate(data: Dataset, model: OnsetsAndFrames, onset_threshold=0.5, frame_t
 
         if save_path is not None:
             os.makedirs(save_path, exist_ok=True)
-            label_path = os.path.join(save_path, os.path.basename(label['path']) + '.label.png')
+            label_path: str = str(os.path.join(save_path, os.path.basename(label['path']) + '.label.png'))
             save_pianoroll(label_path, label['onset'], label['frame'])
-            pred_path = os.path.join(save_path, os.path.basename(label['path']) + '.pred.png')
-            save_pianoroll(pred_path, pred['onset'], pred['frame'])
-            midi_path = os.path.join(save_path, os.path.basename(label['path']) + '.pred.mid')
+            pred_path: str = str(os.path.join(save_path, os.path.basename(label['path']) + '.pred.png'))
+            save_pianoroll(pred_path, prediction['onset'], prediction['frame'])
+            midi_path: str = str(os.path.join(save_path, os.path.basename(label['path']) + '.pred.mid'))
             save_midi(midi_path, p_est, i_est, v_est)
 
     return metrics
 
 
-def evaluate_file(model_file, dataset, dataset_group, sequence_length, save_path,
-                  onset_threshold, frame_threshold, device):
-    dataset_class = getattr(dataset_module, dataset)
-    kwargs = {'sequence_length': sequence_length, 'device': device}
-    if dataset_group is not None:
-        kwargs['groups'] = [dataset_group]
-    dataset = dataset_class(**kwargs)
+def evaluate_file(model_file: str, piano_roll_audio_dataset_name: str, dataset_group: str, sequence_length: int,
+                  save_path: str, onset_threshold: float, frame_threshold: float, device: str):
+    piano_roll_audio_dataset = determine_datasets(piano_roll_audio_dataset_name, dataset_group, sequence_length, device)
 
     model = torch.load(model_file, map_location=device).eval()
     summary(model)
 
-    metrics: dict = evaluate(tqdm(dataset), model, onset_threshold, frame_threshold, save_path)
+    metrics: dict = evaluate(piano_roll_audio_dataset, model, onset_threshold, frame_threshold, save_path)
 
+    total_eval_str: str = ''
     for key, values in metrics.items():
         if key.startswith('metric/'):
             _, category, name = key.split('/')
-            print(f'{category:>32} {name:25}: {np.mean(values):.3f} ± {np.std(values):.3f}')
-            logging.info(f'{category:>32} {name:25}: {np.mean(values):.3f} ± {np.std(values):.3f}')
+            eval_str: str = f'{category:>32} {name:25}: {np.mean(values):.3f} ± {np.std(values):.3f}'
+            print(eval_str)
+            logging.info(eval_str)
+            total_eval_str += eval_str + '\n'
+
+    if save_path is not None:
+        metrics_filepath = os.path.join(save_path, f'metrics-{piano_roll_audio_dataset_name}.txt')
+        with open(metrics_filepath, 'w') as f:
+            f.write(total_eval_str)
+
+
+def determine_datasets(piano_roll_audio_dataset_name, dataset_group, sequence_length, device) \
+        -> dataset_module.PianoRollAudioDataset:
+    dataset_groups: List[str] = dataset_group.split(',')
+    dataset_class = getattr(dataset_module, piano_roll_audio_dataset_name)
+    kwargs = {'sequence_length': sequence_length, 'device': device}
+    if dataset_group is not None:
+        kwargs['groups'] = dataset_groups
+    piano_roll_audio_dataset: dataset_module.PianoRollAudioDataset = dataset_class(**kwargs)
+    return piano_roll_audio_dataset
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('model_file', type=str)
-    parser.add_argument('dataset', nargs='?', default='MAPS')
+    parser.add_argument('piano_roll_audio_dataset_name', nargs='?', default='MAPS')
     parser.add_argument('dataset_group', nargs='?', default=None)
     parser.add_argument('--save-path', default=None)
     parser.add_argument('--sequence-length', default=None, type=int)
@@ -140,9 +157,19 @@ if __name__ == '__main__':
     parser.add_argument('--frame-threshold', default=0.5, type=float)
     parser.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
 
-    # this is written like this for the docker container
-    logging_filepath = os.path.join('runs', 'evaluation' + datetime.now().strftime('%y%m%d-%H%M') + '.log')
-    logging.basicConfig(filename=logging_filepath, level=logging.INFO)
+    save_path_arg = parser.parse_args().save_path
+    if save_path_arg is not None:
+        if os.path.exists(save_path_arg) and len(os.listdir(save_path_arg)) > 0:
+            logging.warning(f'save_path {save_path_arg} is not empty. Clearing directory!')
+            shutil.rmtree(save_path_arg)
+        elif not os.path.exists(save_path_arg):
+            os.makedirs(save_path_arg)
+
+    dataset_name: str = parser.parse_args().piano_roll_audio_dataset_name
+    datetime_str: str = datetime.now().strftime('%y%m%d-%H%M')
+    logging_filepath = os.path.join('runs', f'evaluation-{dataset_name}-{datetime_str}.log')
+    # filemode=a -> append
+    logging.basicConfig(filename=logging_filepath, filemode="a", level=logging.INFO)
     if not os.path.exists(logging_filepath):
         raise Exception('logging file was not created!')
 

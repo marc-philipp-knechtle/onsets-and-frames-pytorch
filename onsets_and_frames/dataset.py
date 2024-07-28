@@ -5,13 +5,13 @@ import re
 import shutil
 from abc import abstractmethod
 from glob import glob
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 import librosa
 import numpy as np
 import soundfile
 
-from torch.utils.data import Dataset
+from torch.utils.data import IterableDataset
 from tqdm import tqdm
 
 from . import midi
@@ -19,7 +19,14 @@ from .constants import *
 from .midi import parse_midi
 
 
-class PianoRollAudioDataset(Dataset):
+class PianoRollAudioDataset(IterableDataset):
+    path: str
+    groups: List[str]
+    sequence_length: int
+    device: str
+    random: np.random.RandomState
+    data: List[Dict]
+
     def __init__(self, path, groups=None, sequence_length=None, seed=42, device=DEFAULT_DEVICE):
         self.path = path
         self.groups = groups if groups is not None else self.available_groups()
@@ -67,6 +74,10 @@ class PianoRollAudioDataset(Dataset):
 
     def __len__(self):
         return len(self.data)
+
+    def __iter__(self):
+        for i in range(len(self.data)):
+            yield self[i]
 
     @classmethod
     @abstractmethod
@@ -209,8 +220,8 @@ class MAESTRO(PianoRollAudioDataset):
                              os.path.join(self.path, row['midi_filename'])) for row in metadata if
                             row['split'] == group])
 
-            files = [(audio if os.path.exists(audio) else audio.replace('.flac', '.wav'), midi) for audio, midi in
-                     files]
+            files = [(audio if os.path.exists(audio) else audio.replace('.flac', '.wav'), midi_filename) for
+                     audio, midi_filename in files]
 
         result = []
         audio_path: str
@@ -218,11 +229,11 @@ class MAESTRO(PianoRollAudioDataset):
         for audio_path, midi_path in files:
             tsv_filename = midi_path.replace('.midi', '.tsv').replace('.mid', '.tsv')
             if not os.path.exists(tsv_filename):
-                midi: np.ndarray = parse_midi(midi_path)
-                # midi is an array consisting of onset, offset, note and velocity
+                midi_arr: np.ndarray = parse_midi(midi_path)
+                # midi_arr is an array consisting of onset, offset, note and velocity
                 # See other explanation on np.savetxt
                 # noinspection PyTypeChecker
-                np.savetxt(tsv_filename, midi, fmt='%.6f', delimiter='\t', header='onset,offset,note,velocity')
+                np.savetxt(tsv_filename, midi_arr, fmt='%.6f', delimiter='\t', header='onset,offset,note,velocity')
             result.append((audio_path, tsv_filename))
         return result
 
@@ -410,6 +421,7 @@ class SchubertWinterreiseVoice(SchubertWinterreiseDataset):
     swd_vocal_midi: str
     swd_vocal_tsv: str
     swd_vocal_wav: str
+    swd_csv: str
 
     def __init__(self,
                  path='data/Schubert_Winterreise_Dataset_v2-1', groups=None, sequence_length=None, seed=42,
@@ -418,6 +430,7 @@ class SchubertWinterreiseVoice(SchubertWinterreiseDataset):
         self.swd_vocal_wav = os.path.join(path, '01_RawData', 'audio_wav_spleeter_separated')
         self.swd_vocal_midi = os.path.join(path, '02_Annotations', '_ann_audio_voice_midi')
         self.swd_vocal_tsv = os.path.join(path, '02_Annotations', '_ann_audio_voice_tsv')
+        self.swd_csv = os.path.join(path, '02_Annotations', 'ann_audio_note')
         super().__init__(path,
                          groups if groups is not None else ['AL98', 'FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                          sequence_length, seed, device)
@@ -465,7 +478,8 @@ class SchubertWinterreiseVoice(SchubertWinterreiseDataset):
                 voice_audio_filepaths.append(path)
         if len(voice_audio_filepaths) == 0:
             raise RuntimeError(f'Expected files for group {group}, found nothing.')
-        ann_audio_note_filepaths_csv: List[str] = glob(os.path.join(super().swd_csv, '*.csv'))
+        ann_audio_note_filepaths_csv: List[str] = glob(os.path.join(self.swd_csv, '*.csv'))
+        assert len(ann_audio_note_filepaths_csv) > 0
         midi_path = midi.save_csv_as_midi(ann_audio_note_filepaths_csv, self.swd_vocal_midi, instrument='voice')
         midi_voice_filepaths: List[str] = glob(os.path.join(midi_path, '*.mid'))
         files_voice_midi_filepaths: List[Tuple[str, str]] = self.combine_audio_midi(voice_audio_filepaths,
