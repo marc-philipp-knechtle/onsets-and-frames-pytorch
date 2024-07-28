@@ -117,7 +117,8 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
     validation_dataset: PianoRollAudioDataset
     dataset_training, validation_dataset = create_datasets(sequence_length, train_groups, train_on, validation_groups,
                                                            validation_length)
-    loader = DataLoader(dataset_training, batch_size, shuffle=True, drop_last=True)
+    # shuffle=true is removed because the IterableDataset is shuffled by default!
+    loader = DataLoader(dataset_training, batch_size, drop_last=True)
     model, optimizer, resume_iteration = create_model(device, learning_rate, logdir, model_complexity, resume_iteration)
     summary(model)
     scheduler = StepLR(optimizer, step_size=learning_rate_decay_steps, gamma=learning_rate_decay_rate)
