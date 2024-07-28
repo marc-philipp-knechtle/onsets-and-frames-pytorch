@@ -403,7 +403,61 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
 
 
 class SchubertWinterreisePiano(SchubertWinterreiseDataset):
-    ...
+    swd_piano_midi: str
+    swd_piano_tsv: str
+    swd_piano_wav: str
+    swd_csv: str
+
+    def __init__(self, path='data/Schubert_Winterreise_Dataset_v2-1', groups=None, sequence_length=None, seed=42,
+                 device=DEFAULT_DEVICE):
+        # adding underscores
+        self.swd_piano_midi = os.path.join(path, '02_Annotations', '_ann_audio_piano_midi')
+        self.swd_piano_tsv = os.path.join(path, '02_Annotations', '_ann_audio_piano_tsv')
+        self.swd_piano_wav = os.path.join(path, '01_RawData', 'audio_wav_spleeter_separated')
+        self.swd_csv = os.path.join(path, '02_Annotations', 'ann_audio_note')
+
+        super().__init__(path,
+                         groups if groups is not None else ['AL98', 'FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
+                         sequence_length, seed, device)
+
+    def create_audio_tsv(self, filepaths_audio_midi: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
+        result: List[Tuple[str, str]] = []
+        audio_filepath: str
+        midi_filepath: str
+        if not os.path.exists(self.swd_piano_tsv):
+            os.makedirs(self.swd_piano_tsv)
+        for audio_filepath, midi_filepath in filepaths_audio_midi:
+            tsv_filepath = os.path.join(self.swd_piano_tsv, os.path.basename(midi_filepath).replace('.mid', '.tsv'))
+            if not os.path.exists(tsv_filepath):
+                midi.create_tsv_from_midi(midi_filepath, tsv_filepath)
+            result.append((audio_filepath, tsv_filepath))
+        return result
+
+    def files(self, group: str) -> List[Tuple]:
+        audio_filepaths: List[str] = super().get_filepaths_from_group(self.swd_piano_wav, group)
+        piano_audio_filepaths: List[str] = []
+        for path in audio_filepaths:
+            if path.__contains__('accompaniment'):
+                piano_audio_filepaths.append(path)
+        if len(piano_audio_filepaths) == 0:
+            raise RuntimeError(f'Expected files for group {group}, found nothing.')
+        ann_audio_note_filepaths_csv: List[str] = glob(os.path.join(self.swd_csv, '*.csv'))
+        midi_path = midi.save_csv_as_midi(ann_audio_note_filepaths_csv, self.swd_piano_midi, instrument='piano')
+        midi_piano_filepaths: List[str] = glob(os.path.join(midi_path, '*.mid'))
+        files_piano_midi_filepaths: List[Tuple[str, str]] = SchubertWinterreiseVoice.combine_audio_midi(
+            piano_audio_filepaths, midi_piano_filepaths)
+        piano_tsv_filepaths = self.create_audio_tsv(files_piano_midi_filepaths)
+        return piano_tsv_filepaths
+
+    def clear_computed(self):
+        logging.info(f'Clearing dirs {self.swd_piano_midi} and {self.swd_piano_tsv}.\n'
+                     f'This is because clear_computed is set to true. \n'
+                     f'They are recomputed. For a faster execution, you have to disable clear_computed.')
+        if os.path.exists(self.swd_piano_midi):
+            shutil.rmtree(self.swd_piano_midi)
+        if os.path.exists(self.swd_piano_tsv):
+            shutil.rmtree(self.swd_piano_tsv)
+        super().clear_computed()
 
 
 class SchubertWinterreiseVoice(SchubertWinterreiseDataset):
