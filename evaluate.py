@@ -101,11 +101,13 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
 
         if save_path is not None:
             os.makedirs(save_path, exist_ok=True)
-            label_path: str = str(os.path.join(save_path, os.path.basename(label['path']) + '.label.png'))
+            dirname: str = os.path.basename(os.path.dirname(label['path']))
+            label_path: str = str(
+                os.path.join(save_path, dirname + '_' + os.path.basename(label['path']) + '.label.png'))
             save_pianoroll(label_path, label['onset'], label['frame'])
-            pred_path: str = str(os.path.join(save_path, os.path.basename(label['path']) + '.pred.png'))
+            pred_path: str = str(os.path.join(save_path, dirname + '_' + os.path.basename(label['path']) + '.pred.png'))
             save_pianoroll(pred_path, prediction['onset'], prediction['frame'])
-            midi_path: str = str(os.path.join(save_path, os.path.basename(label['path']) + '.pred.mid'))
+            midi_path: str = str(os.path.join(save_path, dirname + '_' + os.path.basename(label['path']) + '.pred.mid'))
             save_midi(midi_path, p_est, i_est, v_est)
 
     return metrics
