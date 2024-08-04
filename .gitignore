@@ -4,6 +4,9 @@ pretrained/*
 output
 input
 
+# pretrained model from the greenbech pull request
+model-greenbech-500000.pt
+
 clustertest
 
 __pycache__
