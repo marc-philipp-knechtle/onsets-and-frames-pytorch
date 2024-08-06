@@ -1,6 +1,6 @@
 kubectl delete job onsets-and-frames-pytorch-training-cluster2
 
-export NAME=ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-cluster2:0.0.7
+export NAME=ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-cluster2:0.0.9
 docker build --no-cache -f cluster2/Dockerfile . -t $NAME
 
 docker login ls6-stud-registry.informatik.uni-wuerzburg.de

@@ -12,7 +12,7 @@ from sacred.commands import print_config
 from sacred.observers import FileStorageObserver
 from torch.nn.utils import clip_grad_norm_
 from torch.optim.lr_scheduler import StepLR
-from torch.utils.data import DataLoader, ConcatDataset, Dataset
+from torch.utils.data import DataLoader, ConcatDataset, Dataset, ChainDataset
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
@@ -90,6 +90,14 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
         winterreise_validation = SchubertWinterreiseDataset(groups=['AL98'], sequence_length=sequence_length)
         dataset_training = ConcatDataset([maestro_training, winterreise_training])
         validation_dataset = ConcatDataset([maestro_validation, winterreise_validation])
+    elif train_on == 'MAESTRO+WinterreisePiano':
+        maestro_training = MAESTRO(groups=train_groups, sequence_length=sequence_length)
+        maestro_validation = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
+        winterreisepiano_training = SchubertWinterreisePiano(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
+                                                             sequence_length=sequence_length)
+        winterreisepiano_validation = SchubertWinterreisePiano(groups=['AL98'], sequence_length=sequence_length)
+        dataset_training = ChainDataset([maestro_training, winterreisepiano_training])
+        validation_dataset = ChainDataset([maestro_validation, winterreisepiano_validation])
     # elif train_on == 'all':
     # todo
     # dataset_training = None
