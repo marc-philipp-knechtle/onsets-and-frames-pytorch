@@ -10,6 +10,7 @@ from typing import List, Tuple, Dict
 import librosa
 import numpy as np
 import soundfile
+from torch import Tensor
 
 from torch.utils.data import IterableDataset
 from tqdm import tqdm
@@ -33,7 +34,7 @@ class PianoRollAudioDataset(IterableDataset):
         self.sequence_length = sequence_length
         self.device = device
         self.random = np.random.RandomState(seed)
-        self.data = []
+        self.data: List[Dict[str, Tensor]] = []
 
         print(f"Loading {len(groups)} group{'s' if len(groups) > 1 else ''} "
               f"of {self.__class__.__name__} at {path}")
@@ -101,7 +102,7 @@ class PianoRollAudioDataset(IterableDataset):
                     os.remove(os.path.join(root, file))
 
     @staticmethod
-    def load(audio_path: str, tsv_path: str) -> dict:
+    def load(audio_path: str, tsv_path: str) -> Dict[str, Tensor]:
         """
         load an audio track and the corresponding labels (tsv) annotations
 
@@ -182,7 +183,7 @@ class PianoRollAudioDataset(IterableDataset):
             label[frame_right:offset_right, f] = 1
             velocity[left:frame_right, f] = vel
 
-        data = dict(path=audio_path, audio=audio_tensor, label=label, velocity=velocity)
+        data: Dict[str, Tensor] = dict(path=audio_path, audio=audio_tensor, label=label, velocity=velocity)
         torch.save(data, saved_data_path)
         return data
 
