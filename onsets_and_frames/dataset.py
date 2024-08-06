@@ -167,7 +167,6 @@ class PianoRollAudioDataset(IterableDataset):
         label = torch.zeros(n_steps, n_keys, dtype=torch.uint8)
         velocity = torch.zeros(n_steps, n_keys, dtype=torch.uint8)
 
-        tsv_path = tsv_path
         midi_data_from_tsv = np.loadtxt(tsv_path, delimiter='\t', skiprows=1)
 
         for onset, offset, note, vel in midi_data_from_tsv:
