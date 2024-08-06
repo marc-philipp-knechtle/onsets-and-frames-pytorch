@@ -113,11 +113,11 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
     return metrics
 
 
-def evaluate_file(model_file: str, piano_roll_audio_dataset_name: str, dataset_group: str, sequence_length: int,
+def evaluate_file(model_file_or_dir: str, piano_roll_audio_dataset_name: str, dataset_group: str, sequence_length: int,
                   save_path: str, onset_threshold: float, frame_threshold: float, device: str):
     piano_roll_audio_dataset = determine_datasets(piano_roll_audio_dataset_name, dataset_group, sequence_length, device)
 
-    model = torch.load(model_file, map_location=device).eval()
+    model = torch.load(model_file_or_dir, map_location=device).eval()
     summary(model)
 
     metrics: dict = evaluate(piano_roll_audio_dataset, model, onset_threshold, frame_threshold, save_path)
@@ -137,6 +137,11 @@ def evaluate_file(model_file: str, piano_roll_audio_dataset_name: str, dataset_g
             f.write(total_eval_str)
 
 
+def evaluate_dir(model_dir: str, piano_roll_audio_dataset_name: str, dataset_group: str, sequence_length: int,
+                 save_path: str, device: str):
+    piano_roll_audio_dataset = determine_datasets(piano_roll_audio_dataset_name, dataset_group, sequence_length, device)
+
+
 def determine_datasets(piano_roll_audio_dataset_name, dataset_group, sequence_length, device) \
         -> dataset_module.PianoRollAudioDataset:
     dataset_groups: List[str] = dataset_group.split(',')
@@ -150,7 +155,7 @@ def determine_datasets(piano_roll_audio_dataset_name, dataset_group, sequence_le
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('model_file', type=str)
+    parser.add_argument('model_file_or_dir', type=str)
     parser.add_argument('piano_roll_audio_dataset_name', nargs='?', default='MAPS')
     parser.add_argument('dataset_group', nargs='?', default=None)
     parser.add_argument('--save-path', default=None)
@@ -175,5 +180,16 @@ if __name__ == '__main__':
     if not os.path.exists(logging_filepath):
         raise Exception('logging file was not created!')
 
-    with torch.no_grad():
-        evaluate_file(**vars(parser.parse_args()))
+    model_file_or_dir_local: str = parser.parse_args().model_file_or_dir
+    if os.path.isdir(model_file_or_dir_local):
+        args: argparse.Namespace = parser.parse_args()
+        if args.onset_threshold != 0.5 or args.frame_threshold != 0.5:
+            raise ValueError(
+                f'Explicitely set onset_threshold: {args.onset_threshold}, frame_threshold: {args.frame_threshold} '
+                f'to value different to 0.5. This is not supported when already finished transcriptions are evaluated.')
+
+    elif os.path.isfile(model_file_or_dir_local):
+        with torch.no_grad():
+            evaluate_file(**vars(parser.parse_args()))
+    else:
+        raise RuntimeError(f'model_file_or_dir {model_file_or_dir_local} does not exist!')
