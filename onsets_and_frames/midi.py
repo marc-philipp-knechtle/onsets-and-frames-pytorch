@@ -142,7 +142,7 @@ def save_csv_as_midi(csv_filenames: List[str], path: str, instrument_arg: str = 
     Args:
         csv_filenames: csv files in the format: [onset_time, offset_time, pitch, pitchclass, instrument]
         path: where the MIDI files are stored
-        instrument: which instruments to save in the resulting midi
+        instrument_arg: which instruments to save in the resulting midi
     Returns: path where the MIDI files are saved
     """
     if not os.path.exists(path):
