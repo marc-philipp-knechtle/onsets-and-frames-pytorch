@@ -16,9 +16,15 @@ def extract_notes(onsets, frames, velocity, onset_threshold=0.5, frame_threshold
 
     Returns
     -------
-    pitches: np.ndarray of bin_indices
-    intervals: np.ndarray of rows containing (onset_index, offset_index)
-    velocities: np.ndarray of velocity values
+    pitches:    np.ndarray of bin_indices
+                shape: (<length>, 1)
+                To my understanding, these are the pitch values for each time index
+    intervals:  np.ndarray of rows containing (onset_index, offset_index)
+                shape: (<length>, 2)
+                Start and end of each note
+    velocities: np.ndarray of velocity vales
+                shape: (<length>, 1)
+                Velocity value for each time index
     """
     onsets = (onsets > onset_threshold).cpu().to(torch.uint8)
     frames = (frames > frame_threshold).cpu().to(torch.uint8)
