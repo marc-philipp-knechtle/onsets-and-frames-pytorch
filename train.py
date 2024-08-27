@@ -138,6 +138,7 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
     except Exception as e:
         raise e
     finally:
+        # todo split ChainDataset to clear each one separately
         if clear_computed:
             dataset_training.clear_computed()
             validation_dataset.clear_computed()
