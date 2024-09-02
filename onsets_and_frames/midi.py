@@ -80,7 +80,7 @@ def parse_midi(path: str, global_key_offset: int = 0) -> np.ndarray:
     return np.array(notes)
 
 
-def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities):
+def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities) -> pretty_midi.PrettyMIDI:
     """
     Save extracted notes as a MIDI file
     Parameters
@@ -109,6 +109,7 @@ def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities)
     scipy.io.wavfile.write(os.path.join(os.path.dirname(path), os.path.basename(path) + '.wav'), 44100,
                            audio_data)
     file.write(path)
+    return file
 
 
 def save_np_arr_as_midi(midi_arr: np.ndarray, path: str):
