@@ -1,6 +1,8 @@
 import sys
 from functools import reduce
+from typing import List
 
+import pretty_midi
 import torch
 from PIL import Image
 from torch.nn.modules.module import _addindent
@@ -20,6 +22,7 @@ def summary(model, file=sys.stdout):
         file: output file
     Returns: Nothing
     """
+
     def repr(model):
         # We treat the extra repr like the sub-module, one item per line
         extra_lines = []
@@ -85,3 +88,13 @@ def save_pianoroll(path, onsets, frames, onset_threshold=0.5, frame_threshold=0.
     image = Image.fromarray(image, 'RGB')
     image = image.resize((image.size[0], image.size[1] * zoom))
     image.save(path)
+
+
+def save_pianoroll_gt(midifile: pretty_midi.PrettyMIDI, start: int = None, end: int = None):
+    # idea: create pianoroll representation for standard midi data
+    # -> create separate pianoroll representation considering the results of the onset detector.
+    instruments: List[pretty_midi.Instrument] = []
+    if len(instruments) > 1:
+        raise RuntimeError('Encountered unexpected number of instruments. This method is only intended for one'
+                           'instrument only midi files.')
+    instrument: pretty_midi.Instrument = instruments[0]

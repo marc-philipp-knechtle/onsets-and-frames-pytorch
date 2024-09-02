@@ -10,6 +10,7 @@ from glob import glob
 from typing import List, Dict
 
 import numpy as np
+import pretty_midi
 from mir_eval.multipitch import evaluate as evaluate_frames
 from mir_eval.transcription import precision_recall_f1_overlap as evaluate_notes
 from mir_eval.transcription_velocity import precision_recall_f1_overlap as evaluate_notes_with_velocity
@@ -21,6 +22,7 @@ from torch.utils.data import IterableDataset
 import onsets_and_frames.dataset as dataset_module
 from onsets_and_frames import *
 from onsets_and_frames.midi import parse_midi
+from onsets_and_frames.utils import save_pianoroll_gt
 
 eps = sys.float_info.epsilon
 
@@ -126,7 +128,8 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
             pred_path: str = str(os.path.join(save_path, dirname + '_' + os.path.basename(label['path']) + '.pred.png'))
             save_pianoroll(pred_path, prediction['onset'], prediction['frame'])
             midi_path: str = str(os.path.join(save_path, dirname + '_' + os.path.basename(label['path']) + '.pred.mid'))
-            save_midi(midi_path, p_est, i_est, v_est)
+            midifile: pretty_midi.PrettyMIDI = save_midi(midi_path, p_est, i_est, v_est)
+            save_pianoroll_gt(midifile)
 
     return metrics
 
