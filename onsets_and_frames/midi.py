@@ -91,24 +91,26 @@ def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities)
     velocities: list of velocity values
     """
 
+    midifile = create_midi(intervals, pitches, velocities)
+    audio_data: np.ndarray = midifile.synthesize()
+    # todo replace this with an implementation of pyfluidsynth
+    #  (which can use other sounds compared to the default sine wave)
+    scipy.io.wavfile.write(os.path.join(os.path.dirname(path), os.path.basename(path) + '.wav'), 44100,
+                           audio_data)
+    midifile.write(path)
+    return midifile
+
+
+def create_midi(intervals: np.ndarray, pitches: np.ndarray, velocities: np.ndarray):
     # Remove overlapping intervals (end time should be smaller of equal start time of next note on the same pitch)
     intervals_dict = collections.defaultdict(list)
     for i in range(len(pitches)):
         pitch = int(round(hz_to_midi(pitches[i])))
         intervals_dict[pitch].append((intervals[i], i))
-
     _check_pitch_time_intervals(intervals_dict)
-
     piano: pretty_midi.Instrument = _create_piano_midi(intervals_dict, pitches, velocities)
-
     file: pretty_midi.PrettyMIDI = pretty_midi.PrettyMIDI()
     file.instruments.append(piano)
-    audio_data: np.ndarray = file.synthesize()
-    # todo replace this with an implementation of pyfluidsynth
-    #  (which can use other sounds compared to the default sine wave)
-    scipy.io.wavfile.write(os.path.join(os.path.dirname(path), os.path.basename(path) + '.wav'), 44100,
-                           audio_data)
-    file.write(path)
     return file
 
 
