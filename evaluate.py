@@ -21,8 +21,8 @@ from tqdm import tqdm
 from torch.utils.data import IterableDataset
 import onsets_and_frames.dataset as dataset_module
 from onsets_and_frames import *
-from onsets_and_frames.midi import parse_midi
-from onsets_and_frames.utils import save_pianoroll_gt
+from onsets_and_frames.midi import parse_midi, create_midi
+from onsets_and_frames.utils import save_pianoroll_matplotlib
 
 eps = sys.float_info.epsilon
 
@@ -121,15 +121,24 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
 
         if save_path is not None:
             os.makedirs(save_path, exist_ok=True)
+
+            # dirname is included in the save_path stored evaluation files to provide more context
+            # e.g. performance year for MAESTRO
+            # or vocal or accompaniment for SWD Vocal/Piano
             dirname: str = os.path.basename(os.path.dirname(label['path']))
-            label_path: str = str(
-                os.path.join(save_path, dirname + '_' + os.path.basename(label['path']) + '.label.png'))
-            save_pianoroll(label_path, label['onset'], label['frame'])
-            pred_path: str = str(os.path.join(save_path, dirname + '_' + os.path.basename(label['path']) + '.pred.png'))
-            save_pianoroll(pred_path, prediction['onset'], prediction['frame'])
+            label_path: str = str(os.path.join(save_path, dirname + '_' + os.path.basename(label['path'])))
+
+            # saving pianorolls of label
+            # save_pianoroll(label_path + '.label.png', label['onset'], label['frame'])
+            midifile_reference: pretty_midi.PrettyMIDI = create_midi(i_ref, p_ref, v_ref)
+            save_pianoroll_matplotlib(midifile_reference, label_path + '.ref.png', start_param=10, end_param=25)
+
+            # saving pianorolls of prediction
+            # save_pianoroll(label_path + '.pred.png', prediction['onset'], prediction['frame'])
             midi_path: str = str(os.path.join(save_path, dirname + '_' + os.path.basename(label['path']) + '.pred.mid'))
-            midifile: pretty_midi.PrettyMIDI = save_midi(midi_path, p_est, i_est, v_est)
-            save_pianoroll_gt(midifile)
+            midifile_prediction: pretty_midi.PrettyMIDI = save_midi(midi_path, p_est, i_est, v_est)
+            save_pianoroll_matplotlib(midifile_prediction, label_path + '.pred.png', start_param=10, end_param=25,
+                                      onset_prediction=prediction['onset'])
 
     return metrics
 
@@ -311,7 +320,7 @@ if __name__ == '__main__':
         raise Exception('logging file was not created!')
 
     model_file_or_dir_local: str = parser.parse_args().model_file_or_dir
-    if os.path.isdir(model_file_or_dir_local): # = if we evaluate a directory with alread created annotations
+    if os.path.isdir(model_file_or_dir_local):  # = if we evaluate a directory with alread created annotations
         args: argparse.Namespace = parser.parse_args()
         if args.onset_threshold != 0.5 or args.frame_threshold != 0.5:
             raise ValueError(
