@@ -87,7 +87,7 @@ def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities)
     ----------
     path: the path to save the MIDI file
     pitches: np.ndarray of bin_indices
-    intervals: list of (onset_index, offset_index)
+    intervals: list of (onset_time, offset_time)
     velocities: list of velocity values
     """
 
