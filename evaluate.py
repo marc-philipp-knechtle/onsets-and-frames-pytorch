@@ -303,6 +303,15 @@ if __name__ == '__main__':
     parser.add_argument('--frame-threshold', default=0.5, type=float)
     parser.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
 
+    dataset_name: str = parser.parse_args().piano_roll_audio_dataset_name
+    datetime_str: str = datetime.now().strftime('%y%m%d-%H%M')
+    logging_filepath = os.path.join('runs', f'evaluation-{dataset_name}-{datetime_str}.log')
+    # filemode=a -> append
+    logging.basicConfig(filename=logging_filepath, filemode="a", level=logging.INFO)
+
+    if not os.path.exists(logging_filepath):
+        raise Exception('logging file was not created!')
+
     save_path_arg = parser.parse_args().save_path
     if save_path_arg is not None:
         if os.path.exists(save_path_arg) and len(os.listdir(save_path_arg)) > 0:
@@ -310,14 +319,6 @@ if __name__ == '__main__':
             shutil.rmtree(save_path_arg)
         elif not os.path.exists(save_path_arg):
             os.makedirs(save_path_arg)
-
-    dataset_name: str = parser.parse_args().piano_roll_audio_dataset_name
-    datetime_str: str = datetime.now().strftime('%y%m%d-%H%M')
-    logging_filepath = os.path.join('runs', f'evaluation-{dataset_name}-{datetime_str}.log')
-    # filemode=a -> append
-    logging.basicConfig(filename=logging_filepath, filemode="a", level=logging.INFO)
-    if not os.path.exists(logging_filepath):
-        raise Exception('logging file was not created!')
 
     model_file_or_dir_local: str = parser.parse_args().model_file_or_dir
     if os.path.isdir(model_file_or_dir_local):  # = if we evaluate a directory with alread created annotations
