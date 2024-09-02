@@ -31,7 +31,7 @@ def extract_notes(onsets, frames, velocity, onset_threshold=0.5, frame_threshold
     # torch.cat = concatenates tensors. Requirement: each tensor has the same shape!
     # onsets[:1, :] = first row, keeping all columns (=time bin 0 with all possible key values)
     # onsets[1:, :] - onsets[:-1, :] = subtracts each row of onsets from the next row, creating the difference
-    # This is true if the current index detects an onset and the next index does ot.
+    # This is true if the current index detects an onset and the next index does not.
     onset_diff = torch.cat([onsets[:1, :], onsets[1:, :] - onsets[:-1, :]], dim=0) == 1
 
     pitches = []
