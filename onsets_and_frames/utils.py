@@ -156,7 +156,10 @@ def save_pianoroll_matplotlib(midifile: pretty_midi.PrettyMIDI, save_path: str, 
         ax.set_ylim([pitch_min - 1.5, pitch_max + 1.5])
     else:
         ax.set_xlim([start_param, end_param + 0.5])
-        ax.set_ylim([min(pitches_during_considered_period) - 1, max(pitches_during_considered_period) + 1])
+        if len(pitches_during_considered_period) > 0:
+            ax.set_ylim([min(pitches_during_considered_period) - 1, max(pitches_during_considered_period) + 1])
+        else:
+            ax.set_ylim([pitch_min - 1.5, pitch_max + 1.5])
     ax.grid()
     # ticks and gridlines are below all artists
     ax.set_axisbelow(True)
