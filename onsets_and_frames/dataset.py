@@ -379,39 +379,6 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
             result.append((os.path.join(self.swd_audio_wav, audio_filename), os.path.join(self.swd_tsv, tsv_filename)))
         return result
 
-    # This is deprecated in favor of the new midi handling where the files are completely annotated
-    # def create_tsv(self, ann_audio_globalkey: pd.DataFrame, audio_filename: str, midi_filename: str,
-    #                tsv_filepath: str):
-    #     """
-    #     Converts the midi representation into a tsv representation which is then used in the ML workflow.
-    #     Args:
-    #         ann_audio_globalkey: globalkey of this example. Used for key transformation.
-    #         audio_filename: used to extract the corresponding versions
-    #         midi_filename: used to extract midi
-    #         tsv_filepath: storage location of csv
-    #     Returns: Nothing, it saves a file
-    #     """
-    #     work_id: str = audio_filename[:16]
-    #     performance_id: str = audio_filename[17:21]
-    #     column: pd.DataFrame = ann_audio_globalkey[(ann_audio_globalkey['WorkID'] == work_id) & (
-    #             ann_audio_globalkey['PerformanceID'] == performance_id)]
-    #     if len(column) != 1:
-    #         raise RuntimeError(
-    #             "Didn't find the matching annotion for global key offset. Please check manually.")
-    #     global_key_offset: int = -column['transposeToMatchScore'].item()
-    #     logging.info(
-    #         f'Parsing midi file: {os.path.basename(midi_filename)} for audio {os.path.basename(audio_filename)} '
-    #         f'with offset {str(global_key_offset)}')
-    #     midi: np.ndarray = parse_midi(str(os.path.join(self.path, '01_RawData', 'score_midi', midi_filename)),
-    #                                   global_key_offset)
-    #     # This is for debugging the tsv creation process -> You can listen to the midi afterwards
-    #     # save_np_arr_as_midi(midi, str(os.path.join(os.path.dirname(tsv_filepath), audio_filename + '.mid')))
-    #
-    #     # For some reason pycharm expects an int value in np.savetxt() midi is ofc not an int value.
-    #     # But this error is from pycharm. Therefore, the inspection is disabled here.
-    #     # noinspection PyTypeChecker
-    #     np.savetxt(tsv_filepath, midi, fmt='%.6f', delimiter='\t', header='onset,offset,note,velocity')
-
 
 class SchubertWinterreisePiano(SchubertWinterreiseDataset):
     swd_piano_midi: str
