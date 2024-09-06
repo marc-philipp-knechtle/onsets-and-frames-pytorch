@@ -4,6 +4,8 @@ pretrained/*
 output
 input
 
+cluster-resemble-enhance
+
 # pretrained model from the greenbech pull request
 model-greenbech-500000.pt
 
