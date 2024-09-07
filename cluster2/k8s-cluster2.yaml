@@ -8,7 +8,7 @@ spec:
       priorityClassName: research-med
       containers:
         - name: *jobname
-          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-cluster2:0.0.9
+          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-cluster2:0.1.0
           imagePullPolicy: "IfNotPresent"
           env:
               - name: DATADIR
@@ -23,7 +23,7 @@ spec:
               cpu: "16"
               memory: "32Gi"
             requests: *resources # sets requests = limits
-          command: ["python3", "train.py", "with", "train_on=MAESTRO+WinterreisePiano", "logdir=runs/08-05-maestro+winterreisepiano", "checkpoint_interval=10000"]
+          command: ["python3", "train.py", "with", "train_on=Winterreise", "logdir=runs/09-06-winterreise", "checkpoint_interval=10000"]
           # This command was used for debugging of the pods (infinite sleeping)
           # command: ["/bin/bash", "-c", "--"]
           # args: [ "while true; do sleep 30; done;" ]
