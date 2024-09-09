@@ -167,3 +167,4 @@ def save_pianoroll_matplotlib(midifile: pretty_midi.PrettyMIDI, save_path: str, 
     ax.set_ylabel('Pitch')
 
     fig.savefig(save_path, dpi=900)
+    plt.close(fig)
