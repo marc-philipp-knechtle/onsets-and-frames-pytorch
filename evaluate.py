@@ -143,11 +143,11 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
     return metrics
 
 
-def evaluate_file(model_file_or_dir: str, piano_roll_audio_dataset_name: str, dataset_group: str, sequence_length: int,
-                  save_path: str, onset_threshold: float, frame_threshold: float, device: str):
+def evaluate_model(model_file: str, piano_roll_audio_dataset_name: str, dataset_group: str, sequence_length: int,
+                   save_path: str, onset_threshold: float, frame_threshold: float, device: str):
     piano_roll_audio_dataset = determine_datasets(piano_roll_audio_dataset_name, dataset_group, sequence_length, device)
 
-    model = torch.load(model_file_or_dir, map_location=device).eval()
+    model = torch.load(model_file, map_location=device).eval()
     summary(model)
 
     metrics: dict = evaluate(piano_roll_audio_dataset, model, onset_threshold, frame_threshold, save_path)
@@ -331,6 +331,6 @@ if __name__ == '__main__':
                      args.sequence_length, args.save_path, args.device)
     elif os.path.isfile(model_file_or_dir_local):
         with torch.no_grad():
-            evaluate_file(**vars(parser.parse_args()))
+            evaluate_model(**vars(parser.parse_args()))
     else:
         raise RuntimeError(f'model_file_or_dir {model_file_or_dir_local} does not exist!')
