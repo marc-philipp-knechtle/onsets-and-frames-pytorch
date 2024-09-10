@@ -5,10 +5,10 @@ metadata:
 spec:
   template:
     spec:
-      priorityClassName: research-med
+      priorityClassName: research-low
       containers:
         - name: *jobname
-          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-evaluation:0.1.0
+          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-evaluation:0.1.1
           imagePullPolicy: "IfNotPresent"
           env:
               - name: DATADIR
@@ -20,13 +20,13 @@ spec:
           resources:
             limits: &resources
               nvidia.com/gpu: "1"
-              cpu: "16"
-              memory: "32Gi"
+              cpu: "8"
+              memory: "16Gi"
             requests: *resources # sets requests = limits
-#          command: ["python3", "evaluate.py", "models/model-500000.pt", "MAESTRO", "test", "--save-path=runs/MAESTRO"]
-#          command: ["python3", "evaluate.py", "models/model-500000.pt", "SchubertWinterreiseDataset", "HU33,SC06", "--save-path=runs/SchubertWinterreiseDataset"]
-#          command: ["python3", "evaluate.py", "models/model-500000.pt", "SchubertWinterreisePiano", "HU33,SC06", "--save-path=runs/SchubertWinterreisePiano"]
-          command: ["python3", "evaluate.py", "models/model-500000.pt", "SchubertWinterreiseVoice", "HU33,SC06", "--save-path=runs/SchubertWinterreiseVoice"]
+          # command: ["python3", "evaluate.py", "models/model-451000.pt", "MAESTRO", "test", "--save-path=runs/MAESTRO"]
+          # command: ["python3", "evaluate.py", "models/model-451000.pt", "SchubertWinterreiseDataset", "HU33,SC06", "--save-path=runs/SchubertWinterreiseDataset"]
+          # command: ["python3", "evaluate.py", "models/model-451000.pt", "SchubertWinterreisePiano", "HU33,SC06", "--save-path=runs/SchubertWinterreisePiano"]
+          command: ["python3", "evaluate.py", "models/model-451000.pt", "SchubertWinterreiseVoice", "HU33,SC06", "--save-path=runs/SchubertWinterreiseVoice"]
           # This command was used for debugging of the pods (infinite sleeping)
           # command: ["/bin/bash", "-c", "--"]
           # args: [ "while true; do sleep 30; done;" ]
