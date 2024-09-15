@@ -62,6 +62,27 @@ def config():
     ex.observers.append(FileStorageObserver.create(logdir))
 
 
+class EarlyStopping:
+    def __init__(self, patience = 50):
+        self.patience = patience
+        self.best_score = None
+        self.counter = 0
+        self.early_stop = False
+        self.best_model_state = None
+
+    def __call__(self, score, model):
+        if self.best_score is None:
+            self.best_score = score
+            self.best_model_state = model
+        elif score < self.best_score:
+            self.counter += 1
+            if self.counter >= self.patience:
+                self.early_stop = True
+        else:
+            self.best_score = score
+            self.best_model_state = model
+            self.counter = 0
+
 def create_datasets(sequence_length: int, train_groups: List[str], train_on: str, validation_groups: List[str],
                     validation_length: int) -> Tuple[Dataset, Dataset]:
     dataset_training: Dataset
@@ -130,11 +151,17 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
     model, optimizer, resume_iteration = create_model(device, learning_rate, logdir, model_complexity, resume_iteration)
     summary(model)
     scheduler = StepLR(optimizer, step_size=learning_rate_decay_steps, gamma=learning_rate_decay_rate)
+    early_stopping = EarlyStopping()
     loop = tqdm(range(resume_iteration + 1, iterations + 1))
     try:
         for i, batch in zip(loop, cycle(loader)):
             run_iteration(batch, checkpoint_interval, clip_gradient_norm, i, logdir, model, optimizer, scheduler,
-                          validation_dataset, validation_interval, writer)
+                          validation_dataset, validation_interval, writer, early_stopping)
+            if early_stopping.early_stop:
+                logging.info(f'EARLY STOPPING! saving mode early-stopping-model-{i}.pt')
+                torch.save(model, os.path.join(logdir, f'early-stopping-model-{i}.pt'))
+                torch.save(optimizer.state_dict(), os.path.join(logdir, 'last-optimizer-state.pt'))
+                break
     except Exception as e:
         raise e
     finally:
@@ -177,7 +204,7 @@ def create_model(device, learning_rate, logdir, model_complexity, resume_iterati
 
 
 def run_iteration(batch, checkpoint_interval, clip_gradient_norm, i, logdir, model, optimizer, scheduler,
-                  validation_dataset, validation_interval, writer: SummaryWriter):
+                  validation_dataset, validation_interval, writer: SummaryWriter, early_stopping: EarlyStopping):
     predictions, losses = model.run_on_batch(batch)
     loss = sum(losses.values())
     optimizer.zero_grad()
@@ -191,8 +218,10 @@ def run_iteration(batch, checkpoint_interval, clip_gradient_norm, i, logdir, mod
     if i % validation_interval == 0:
         model.eval()
         with torch.no_grad():
-            for key, value in evaluate(validation_dataset, model).items():
+            eval_dct = evaluate(validation_dataset, model)
+            for key, value in eval_dct.items():
                 writer.add_scalar('validation/' + key.replace(' ', '_'), np.mean(value), global_step=i)
+            early_stopping(np.mean(eval_dct['metric/frame/f1']), model)
         model.train()
     if i % checkpoint_interval == 0:
         logging.info(f'saving mode model-{i}.pt')
