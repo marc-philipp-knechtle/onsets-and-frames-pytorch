@@ -8,7 +8,7 @@ spec:
       priorityClassName: research-med
       containers:
         - name: *jobname # gets read as "test-job" as it links to the variable definition above
-          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-cluster3:0.0.4
+          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-cluster3:0.0.7
           imagePullPolicy: "IfNotPresent"
           env:
               - name: DATADIR
@@ -20,10 +20,10 @@ spec:
           resources:
             limits: &resources
               nvidia.com/gpu: "1"
-              cpu: "16"
+              cpu: "6"
               memory: "32Gi"
             requests: *resources # sets requests = limits
-          command: ["python3", "train.py", "with", "train_on=WinterreiseVoice", "logdir=runs/08-07-winterreiseVoice", "checkpoint_interval=10000"]
+          command: ["python3", "train.py", "with", "train_on=Winterreise", "logdir=runs/09-15-winterreise-early-stopping", "checkpoint_interval=10000"]
           # This command was used for debugging of the pods (infinite sleeping)
           # command: ["/bin/bash", "-c", "--"]
           # args: [ "while true; do sleep 30; done;" ]
