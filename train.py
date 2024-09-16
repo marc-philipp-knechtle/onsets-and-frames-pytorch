@@ -159,7 +159,7 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
                           validation_dataset, validation_interval, writer, early_stopping)
             if early_stopping.early_stop:
                 logging.info(f'EARLY STOPPING! saving mode early-stopping-model-{i}.pt')
-                torch.save(model, os.path.join(logdir, f'early-stopping-model-{i}.pt'))
+                torch.save(early_stopping.best_model_state, os.path.join(logdir, f'early-stopping-model-{i}.pt'))
                 torch.save(optimizer.state_dict(), os.path.join(logdir, 'last-optimizer-state.pt'))
                 break
     except Exception as e:
