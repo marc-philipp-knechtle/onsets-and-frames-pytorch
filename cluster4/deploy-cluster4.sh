@@ -8,4 +8,4 @@ docker push $NAME
 
 kubectl apply -f cluster4/k8s-cluster4.yaml
 
-kubectl get pods --watch
+watch kubectl get pods
