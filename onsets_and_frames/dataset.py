@@ -193,6 +193,9 @@ class MAESTRO(PianoRollAudioDataset):
     def __init__(self, path='data/MAESTRO', groups=None, sequence_length=None, seed=42, device=DEFAULT_DEVICE):
         super().__init__(path, groups if groups is not None else ['train'], sequence_length, seed, device)
 
+    def __str__(self):
+        return 'MAESTRO'
+
     @classmethod
     def available_groups(cls):
         return ['train', 'validation', 'test']
@@ -243,6 +246,9 @@ class MAPS(PianoRollAudioDataset):
         super().__init__(path, groups if groups is not None else ['ENSTDkAm', 'ENSTDkCl'], sequence_length, seed,
                          device)
 
+    def __str__(self):
+        return 'MAPS'
+
     @classmethod
     def available_groups(cls):
         return ['AkPnBcht', 'AkPnBsdf', 'AkPnCGdD', 'AkPnStgb', 'ENSTDkAm', 'ENSTDkCl', 'SptkBGAm', 'SptkBGCl',
@@ -279,6 +285,9 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         super().__init__(path,
                          groups if groups is not None else ['AL98', 'FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                          sequence_length, seed, device)
+
+    def __str__(self):
+        return 'SchubertWinterreiseDataset'
 
     @staticmethod
     def get_filepaths_from_group(directory: str, regex_pattern) -> List[str]:
@@ -398,6 +407,9 @@ class SchubertWinterreisePiano(SchubertWinterreiseDataset):
                          groups if groups is not None else ['AL98', 'FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                          sequence_length, seed, device)
 
+    def __str__(self):
+        return 'SchubertWinterreisePiano'
+
     def create_audio_tsv(self, filepaths_audio_midi: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
         result: List[Tuple[str, str]] = []
         audio_filepath: str
@@ -455,6 +467,9 @@ class SchubertWinterreiseVoice(SchubertWinterreiseDataset):
         super().__init__(path,
                          groups if groups is not None else ['AL98', 'FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                          sequence_length, seed, device)
+
+    def __str__(self):
+        return 'SchubertWinterreiseVoice'
 
     @staticmethod
     def combine_audio_midi(audio_filepaths: List[str], midi_filepaths: List[str]) -> List[Tuple[str, str]]:
