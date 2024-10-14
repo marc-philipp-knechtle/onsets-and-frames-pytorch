@@ -1,6 +1,6 @@
 kubectl delete job onsets-and-frames-evaluation
 
-export NAME=ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-evaluation:0.1.9
+export NAME=ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-evaluation:0.2.1
 docker build --no-cache -f cluster2/Dockerfile . -t $NAME
 
 docker login ls6-stud-registry.informatik.uni-wuerzburg.de
