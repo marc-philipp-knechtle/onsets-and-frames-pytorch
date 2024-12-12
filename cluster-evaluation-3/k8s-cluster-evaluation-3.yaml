@@ -8,7 +8,7 @@ spec:
       priorityClassName: research-low
       containers:
         - name: *jobname
-          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-evaluation-3:0.0.4
+          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-evaluation-3:0.0.6
           imagePullPolicy: "IfNotPresent"
           env:
               - name: DATADIR
