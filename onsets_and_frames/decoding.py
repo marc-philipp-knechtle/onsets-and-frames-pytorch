@@ -78,6 +78,8 @@ def notes_to_frames(pitches, intervals, shape):
     """
     roll = np.zeros(tuple(shape))
     for pitch, (onset, offset) in zip(pitches, intervals):
+        if pitch >= 88:
+            continue
         roll[onset:offset, pitch] = 1
 
     time = np.arange(roll.shape[0])

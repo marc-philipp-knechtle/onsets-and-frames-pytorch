@@ -7,7 +7,7 @@ import logging
 from collections import defaultdict
 from datetime import datetime
 from glob import glob
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 import numpy as np
 import pretty_midi
@@ -21,12 +21,22 @@ from tqdm import tqdm
 from torch.utils.data import IterableDataset
 import onsets_and_frames.dataset as dataset_module
 from onsets_and_frames import *
+from onsets_and_frames.dataset import PianoRollAudioDataset, SchubertWinterreiseDataset, SchubertWinterreisePiano, \
+    SchubertWinterreiseVoice
 from onsets_and_frames.midi import parse_midi, create_midi
 from onsets_and_frames.utils import save_pianoroll_matplotlib
 
 eps = sys.float_info.epsilon
 
+default_evaluation_datasets: List[Tuple[str, dataset_module.PianoRollAudioDataset]] = \
+    [
+        # ('runs/MAESTRO', MAESTRO(groups=['test'])),
+        ('runs/SchubertWinterreiseDataset', SchubertWinterreiseDataset(groups=['SC06'])),
+        ('runs/SchubertWinterreisePiano', SchubertWinterreisePiano(groups=['SC06'])),
+        ('runs/SchubertWinterreiseVoice', SchubertWinterreiseVoice(groups=['SC06']))]
 
+
+# todo rename to create_dict
 def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_threshold=0.5,
              frame_threshold=0.5, save_path=None) -> dict:
     metrics = defaultdict(list)
@@ -34,8 +44,17 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
     # onset, offset, frame and velocity
     prediction: Dict[Tensor, Tensor, Tensor, Tensor]
     for label in tqdm(pianoroll_dataset):
+        losses: Dict[str, Tensor]
+        """
+        includes:
+        loss/onset
+        loss/offset
+        loss/frame
+        loss/velocity
+        """
         prediction, losses = model.run_on_batch(label)
 
+        loss: Tensor
         for key, loss in losses.items():
             metrics[key].append(loss.item())
 
@@ -143,15 +162,100 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
     return metrics
 
 
-def evaluate_model(model_file: str, piano_roll_audio_dataset_name: str, dataset_group: str, sequence_length: int,
-                   save_path: str, onset_threshold: float, frame_threshold: float, device: str):
+def compute_avg_precision(piano_roll_audio_dataset: PianoRollAudioDataset, model: OnsetsAndFrames) -> Tuple[
+    List[float], List[float]]:
+    """
+    Args:
+        piano_roll_audio_dataset:
+        model:
+
+    Returns: Average Precision (see paper explanation) for each evaluated file (therefore as a list)
+    """
+    logging.info('Computing average Precision Recall (Area under Precision, Recall curve)')
+    scaling = HOP_LENGTH / SAMPLE_RATE
+
+    avg_precision_frame: List[float] = []
+    avg_precision_onset: List[float] = []
+    for label in tqdm(piano_roll_audio_dataset):
+        prediction, losses = model.run_on_batch(label)
+
+        for key, value in prediction.items():
+            value.squeeze_(0).relu_()
+
+        p_ref, i_ref, v_ref = extract_notes(label['onset'], label['frame'], label['velocity'])
+        t_ref, f_ref = notes_to_frames(p_ref, i_ref, label['frame'].shape)
+
+        i_ref_scaled_reshaped = (i_ref * scaling).reshape(-1, 2)
+        p_ref_hz = np.array([midi_to_hz(MIN_MIDI + midi_val) for midi_val in p_ref])
+        t_ref_scaled = t_ref.astype(np.float64) * scaling
+        f_ref_hz = [np.array([midi_to_hz(MIN_MIDI + midi_val) for midi_val in freqs]) for freqs in f_ref]
+
+        precision_recall_pairs_frame: List[Tuple[float, float]] = []
+        precision_recall_pairs_onset: List[Tuple[float, float]] = []
+        for threshold in np.arange(0, 1.1, 0.05):
+            p_est, i_est, v_est = extract_notes(prediction['onset'], prediction['frame'], prediction['velocity'],
+                                                threshold, threshold)
+            t_est, f_est = notes_to_frames(p_est, i_est, prediction['frame'].shape)
+
+            i_est_scaled_reshaped = (i_est * scaling).reshape(-1, 2)
+            p_est_hz = np.array([midi_to_hz(MIN_MIDI + midi_val) for midi_val in p_est])
+            t_est_scaled = t_est.astype(np.float64) * scaling
+            f_est_hz = [np.array([midi_to_hz(MIN_MIDI + midi_val) for midi_val in freqs]) for freqs in f_est]
+
+            frame_metrics: Dict[str, float] = evaluate_frames(t_ref_scaled, f_ref_hz, t_est_scaled, f_est_hz)
+            precision: float = frame_metrics['Precision']
+            recall: float = frame_metrics['Recall']
+            precision_recall_pairs_frame.append((recall, precision))
+
+            p_onset, r_onset, f, o = evaluate_notes(i_ref_scaled_reshaped, p_ref_hz, i_est_scaled_reshaped, p_est_hz,
+                                              offset_ratio=None)
+            precision_recall_pairs_onset.append((p_onset, r_onset))
+
+        precision_recall_pairs_frame = sorted(precision_recall_pairs_frame)
+
+        total_precision_recall_area = 0
+        prev_recall = 0
+        prev_precision = 0
+        for recall, precision in precision_recall_pairs_frame:
+            total_precision_recall_area += (recall - prev_recall) * max(prev_precision, precision)
+            prev_precision = precision
+            prev_recall = recall
+        avg_precision_frame.append(total_precision_recall_area)
+
+        total_precision_recall_area = 0
+        prev_recall = 0
+        prev_precision = 0
+        for recall, precision in precision_recall_pairs_onset:
+            total_precision_recall_area += (recall - prev_recall) * max(prev_precision, precision)
+            prev_precision = precision
+            prev_recall = recall
+        avg_precision_onset.append(total_precision_recall_area)
+
+    return avg_precision_frame, avg_precision_onset
+
+
+def evaluate_model_file(model_file: str, piano_roll_audio_dataset_name: str, dataset_group: str, sequence_length: int,
+                        save_path: str, onset_threshold: float, frame_threshold: float, device: str):
     piano_roll_audio_dataset = determine_datasets(piano_roll_audio_dataset_name, dataset_group, sequence_length, device)
 
-    model = torch.load(model_file, map_location=device).eval()
+    model: OnsetsAndFrames = torch.load(model_file, map_location=device).eval()
     summary(model)
 
-    metrics: dict = evaluate(piano_roll_audio_dataset, model, onset_threshold, frame_threshold, save_path)
+    evaluate_model(model, piano_roll_audio_dataset, frame_threshold, onset_threshold, save_path)
 
+
+def evaluate_model(model: OnsetsAndFrames, piano_roll_audio_dataset: PianoRollAudioDataset, frame_threshold: float,
+                   onset_threshold: float, save_path: str):
+    metrics: Dict[str, List[float]] = evaluate(piano_roll_audio_dataset, model, onset_threshold, frame_threshold,
+                                               save_path)
+    avg_precision_frame, avg_precision_onset = compute_avg_precision(piano_roll_audio_dataset, model)
+    metrics.update({'metric/frame/avg_precision': avg_precision_frame})
+    metrics.update({'metric/note/avg_precision_onset': avg_precision_onset})
+    """
+    evaluate returns a list of metrics which are included by file level (meaning each metric compute result is stored)
+    key: metric name
+    value(s): list off all computations
+    """
     total_eval_str: str = ''
     for key, values in metrics.items():
         if key.startswith('metric/'):
@@ -160,15 +264,14 @@ def evaluate_model(model_file: str, piano_roll_audio_dataset_name: str, dataset_
             print(eval_str)
             logging.info(eval_str)
             total_eval_str += eval_str + '\n'
-
     if save_path is not None:
-        metrics_filepath = os.path.join(save_path, f'metrics-{piano_roll_audio_dataset_name}.txt')
+        metrics_filepath = os.path.join(save_path, f'metrics-{str(piano_roll_audio_dataset)}.txt')
         with open(metrics_filepath, 'w') as f:
             f.write(total_eval_str)
 
 
-def evaluate_dir(model_dir: str, piano_roll_audio_dataset_name: str, dataset_group: str, sequence_length: int,
-                 save_path: str, device: str):
+def evaluate_inference_dir(model_dir: str, piano_roll_audio_dataset_name: str, dataset_group: str, sequence_length: int,
+                           save_path: str, device: str):
     piano_roll_audio_dataset = determine_datasets(piano_roll_audio_dataset_name, dataset_group, sequence_length, device)
 
     metrics = defaultdict(list)
@@ -179,7 +282,8 @@ def evaluate_dir(model_dir: str, piano_roll_audio_dataset_name: str, dataset_gro
     for label in tqdm(piano_roll_audio_dataset):
         # This only works for the vocano annotations as they represent the directory structure created by spleeter
         dirname: str = os.path.dirname(label['path'])
-        label_name = os.path.basename(dirname)
+        label_name = os.path.basename(label['path'])
+        label_name = label_name.replace('.wav', '')
         matching_midi_filepaths = [csv_file for csv_file in predictions_filepaths if
                                    re.compile(fr".*{re.escape(label_name)}.*").search(csv_file)]
         if len(matching_midi_filepaths) is not 1:
@@ -295,42 +399,76 @@ def determine_datasets(piano_roll_audio_dataset_name, dataset_group, sequence_le
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('model_file_or_dir', type=str)
-    parser.add_argument('piano_roll_audio_dataset_name', nargs='?', default='MAPS')
+    parser.add_argument('piano_roll_audio_dataset_name', nargs='?', default='default',
+                        help='PianoRollAudioDataset where the model is evaluated on.'
+                             'Default is default which evaluates on every configured dataset.')
     parser.add_argument('dataset_group', nargs='?', default=None)
     parser.add_argument('--save-path', default=None)
     parser.add_argument('--sequence-length', default=None, type=int)
     parser.add_argument('--onset-threshold', default=0.5, type=float)
     parser.add_argument('--frame-threshold', default=0.5, type=float)
     parser.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
+    args: argparse.Namespace = parser.parse_args()
 
     dataset_name: str = parser.parse_args().piano_roll_audio_dataset_name
     datetime_str: str = datetime.now().strftime('%y%m%d-%H%M')
-    logging_filepath = os.path.join('runs', f'evaluation-{dataset_name}-{datetime_str}.log')
+    logging_filepath: str
+    if args.save_path is None:
+        logging_filepath = os.path.join('runs', f'evaluation-{datetime_str}.log')
+    else:
+        logging_filepath = os.path.join(args.save_path, f'evaluation-{dataset_name}-{datetime_str}.log')
+    if not os.path.exists(os.path.dirname(logging_filepath)):
+        os.makedirs(os.path.dirname(logging_filepath))
     # filemode=a -> append
     logging.basicConfig(filename=logging_filepath, filemode="a", level=logging.INFO)
+
+    # By default, the root logger is set to WARNING and all loggers you define
+    # inherit that value. Here we set the root logger to NOTSET. This logging
+    # level is automatically inherited by all existing and new sub-loggers
+    # that do not set a less verbose level.
+    logging.root.setLevel(logging.NOTSET)
 
     if not os.path.exists(logging_filepath):
         raise Exception('logging file was not created!')
 
     save_path_arg = parser.parse_args().save_path
-    if save_path_arg is not None:
-        if os.path.exists(save_path_arg) and len(os.listdir(save_path_arg)) > 0:
-            logging.warning(f'save_path {save_path_arg} is not empty. Clearing directory!')
-            shutil.rmtree(save_path_arg)
-        elif not os.path.exists(save_path_arg):
-            os.makedirs(save_path_arg)
+    # todo check with os.makedirs above
+    # todo maybe raise runtime error if exists and is not empty!
+    # if save_path_arg is not None:
+    #     if os.path.exists(save_path_arg) and len(os.listdir(save_path_arg)) > 0:
+    #         logging.warning(f'save_path {save_path_arg} is not empty. Clearing directory!')
+    #         shutil.rmtree(save_path_arg)
+    #     elif not os.path.exists(save_path_arg):
+    #         os.makedirs(save_path_arg)
 
     model_file_or_dir_local: str = parser.parse_args().model_file_or_dir
-    if os.path.isdir(model_file_or_dir_local):  # = if we evaluate a directory with alread created annotations
-        args: argparse.Namespace = parser.parse_args()
+    if os.path.isdir(model_file_or_dir_local):  # = if we evaluate a directory with already created annotations
         if args.onset_threshold != 0.5 or args.frame_threshold != 0.5:
             raise ValueError(
                 f'Explicitely set onset_threshold: {args.onset_threshold}, frame_threshold: {args.frame_threshold} '
                 f'to value different to 0.5. This is not supported when already finished transcriptions are evaluated.')
-        evaluate_dir(model_file_or_dir_local, args.piano_roll_audio_dataset_name, args.dataset_group,
-                     args.sequence_length, args.save_path, args.device)
+        evaluate_inference_dir(args.model_file_or_dir, args.piano_roll_audio_dataset_name, args.dataset_group,
+                               args.sequence_length, args.save_path, args.device)
     elif os.path.isfile(model_file_or_dir_local):
-        with torch.no_grad():
-            evaluate_model(**vars(parser.parse_args()))
+        if args.piano_roll_audio_dataset_name == 'default':
+            if args.dataset_group is not None:
+                raise RuntimeError('Specified group with default evaluation. Default runs all possible evaluations.'
+                                   'You cannot specify a fixed group for this kind of evaluation.')
+            if args.save_path is not None:
+                raise RuntimeError('Specified save path with default evaluation. Default evaluation has specified save'
+                                   'paths. Please use the default ones or correct them via code.')
+            for save_path_key, dataset_item in default_evaluation_datasets:
+                logging.info(f'Evaluating on {str(dataset_item)} with saving at: {save_path_key}')
+                print(f'Evaluating on {str(dataset_item)} with saving at: {save_path_key}')
+                with torch.no_grad():
+                    model_onsets: OnsetsAndFrames = torch.load(args.model_file_or_dir, map_location=args.device).eval()
+                    summary(model_onsets)
+                    evaluate_model(model_onsets, dataset_item, args.frame_threshold, args.onset_threshold,
+                                   save_path_key)
+        else:
+            with torch.no_grad():
+                evaluate_model_file(args.model_file_or_dir, args.piano_roll_audio_dataset_name, args.dataset_group,
+                                    args.sequence_length, args.save_path, args.onset_threshold, args.frame_threshold,
+                                    args.device)
     else:
         raise RuntimeError(f'model_file_or_dir {model_file_or_dir_local} does not exist!')
