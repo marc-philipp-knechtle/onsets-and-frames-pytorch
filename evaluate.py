@@ -333,7 +333,6 @@ def evaluate_inference_dir(model_dir: str, piano_roll_audio_dataset_name: str, d
         i_ref = (i_ref_frames * scaling).reshape(-1, 2)
         p_ref_hz = np.array([midi_to_hz(MIN_MIDI + midi_val) for midi_val in p_ref])
 
-        # Evaluating without onsets
         p, r, f, o = evaluate_notes(i_ref, p_ref_hz, i_est, p_est_hz, offset_ratio=None)
         metrics['metric/note/precision'].append(p)
         metrics['metric/note/recall'].append(r)
