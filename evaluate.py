@@ -359,6 +359,8 @@ def evaluate_inference_dir(model_dir: str, piano_roll_audio_dataset_name: str, d
         metrics['metric/note-with-offsets-and-velocity/f1'].append(f)
         metrics['metric/note-with-offsets-and-velocity/overlap'].append(o)
 
+        # this calculates the frame based metrics
+        # this is only useful when having a nuanced dataset
         p_ref_min_midi = np.array([x + MIN_MIDI for x in p_ref])
         # t_ref = np.ndarray containing the frame indices
         t_ref, f_ref = notes_to_frames(p_ref_min_midi, i_ref_frames, label['frame'].shape)
