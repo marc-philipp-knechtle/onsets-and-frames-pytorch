@@ -7,7 +7,7 @@ input
 cluster-resemble-enhance
 
 # pretrained model from the greenbech pull request
-model-greenbech-500000.pt
+pretrained/model-greenbech-500000.pt
 
 clustertest
 
