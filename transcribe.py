@@ -281,12 +281,14 @@ def handle_file_or_directory(path: str, args: argparse.Namespace):
                             args.save_path,
                             args.sequence_length, args.onset_threshold,
                             args.frame_threshold, args.device)
-            os.remove(os.path.join(dirpath, f))
+            if args.remove_input:
+                os.remove(os.path.join(dirpath, f))
         if os.path.isdir(os.path.join(dirpath, f)):
             transcribe_dir(args.model_file, path, args.save_path, args.sequence_length,
                            args.onset_threshold, args.frame_threshold, args.device, args.remove_input)
-            for directory in os.listdir(path):
-                shutil.rmtree(os.path.join(path, directory))
+            if args.remove_input:
+                for directory in os.listdir(path):
+                    shutil.rmtree(os.path.join(path, directory))
 
 
 def main(args: argparse.Namespace):
