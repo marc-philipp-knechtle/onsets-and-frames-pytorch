@@ -224,7 +224,7 @@ def _check_pitch_time_intervals(intervals_dict):
             end_current_interval_seconds = interval_list[i][0][1]
             start_next_interval_seconds = interval_list[i + 1][0][0]
             if end_current_interval_seconds >= start_next_interval_seconds:
-                logging.warning(
+                logging.debug(
                     f'End time should be smaller of equal start time of next note on the same pitch.\n'
                     f'Current Pitch End: {end_current_interval_seconds}\n'
                     f'Next pitch Start: {start_next_interval_seconds}\n'
