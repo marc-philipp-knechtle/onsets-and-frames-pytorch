@@ -23,7 +23,7 @@ spec:
               cpu: "16"
               memory: "32Gi"
             requests: *resources # sets requests = limits
-          command: ["python3", "train.py", "with", "train_on=Winterreise", "logdir=runs/09-17-winterreise", "checkpoint_interval=10000"]
+          command: ["python3", "train.py", "with", "train_on=Winterreise", "logdir=runs/02-10-winterreise", "checkpoint_interval=10000"]
           # This command was used for debugging of the pods (infinite sleeping)
           # command: ["/bin/bash", "-c", "--"]
           # args: [ "while true; do sleep 30; done;" ]
@@ -46,7 +46,7 @@ spec:
                     - 132.187.14.19
                     - 132.187.14.20  # Not important for you, just copy along
                 user: extch1  # <namespace>
-                path: "/home/ext/ch1/cluster2/data" # The path you want to mount
+                path: "/home/ext/ch1/studentMPK/cluster2/data" # The path you want to mount
                 secretRef: # The name of the secret for auth. Is always "ceph-secret"
                   name: ceph-secret
           - name: *ceph_runs
@@ -57,7 +57,7 @@ spec:
                     - 132.187.14.19
                     - 132.187.14.20  # Not important for you, just copy along
                 user: extch1  # <namespace>
-                path: "/home/ext/ch1/cluster2/runs" # The path you want to mount
+                path: "/home/ext/ch1/studentMPK/cluster2/runs" # The path you want to mount
                 secretRef: # The name of the secret for auth. Is always "ceph-secret"
                     name: ceph-secret
           - name: dshm # "needs" to be copied along, see above
