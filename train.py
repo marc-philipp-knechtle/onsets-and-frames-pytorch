@@ -63,7 +63,7 @@ def config():
 
 
 class EarlyStopping:
-    def __init__(self, patience = 50):
+    def __init__(self, patience=50):
         self.patience = patience
         self.best_score = None
         self.counter = 0
@@ -82,6 +82,7 @@ class EarlyStopping:
             self.best_score = score
             self.best_model_state = model
             self.counter = 0
+
 
 def create_datasets(sequence_length: int, train_groups: List[str], train_on: str, validation_groups: List[str],
                     validation_length: int) -> Tuple[Dataset, Dataset]:
@@ -119,10 +120,28 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
         winterreisepiano_validation = SchubertWinterreisePiano(groups=['AL98'], sequence_length=sequence_length)
         dataset_training = ChainDataset([maestro_training, winterreisepiano_training])
         validation_dataset = ChainDataset([maestro_validation, winterreisepiano_validation])
-    # elif train_on == 'all':
-    # todo
-    # dataset_training = None
-    # validation_dataset = None
+    elif train_on == 'all':
+        maestro_training = MAESTRO(groups=train_groups, sequence_length=sequence_length)
+        maestro_validation = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
+        winterreise_training = SchubertWinterreiseDataset(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QUI98', 'TR99'],
+                                                          sequence_length=sequence_length)
+        winterreise_validation = SchubertWinterreiseDataset(groups=['AL98'], sequence_length=sequence_length)
+        winterreisevoice_training = SchubertWinterreiseVoice(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
+                                                             sequence_length=sequence_length)
+        winterreisevoice_validation = SchubertWinterreiseVoice(groups=['AL98'], sequence_length=sequence_length)
+        winterreisepiano_training = SchubertWinterreisePiano(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
+                                                             sequence_length=sequence_length)
+        winterreisepiano_validation = SchubertWinterreisePiano(groups=['AL98'], sequence_length=sequence_length)
+        maps_training = MAPS(
+            groups=['AkPnBcht', 'AkPnBsdf', 'AkPnCGdD', 'AkPnStgb', 'SptkBGAm', 'SptkBGCl', 'StbgTGd2'],
+            sequence_length=sequence_length)
+        maps_validation = MAPS(groups=['ENSTDkAm', 'ENSTDkCl'], sequence_length=validation_length)
+        dataset_training = ChainDataset(
+            [maestro_training, winterreise_training, winterreisevoice_training, winterreisepiano_training,
+             maps_training])
+        validation_dataset = ChainDataset(
+            [maestro_validation, winterreise_validation, winterreisevoice_validation, winterreisepiano_validation,
+             maps_validation])
     else:
         dataset_training = MAPS(
             groups=['AkPnBcht', 'AkPnBsdf', 'AkPnCGdD', 'AkPnStgb', 'SptkBGAm', 'SptkBGCl', 'StbgTGd2'],
