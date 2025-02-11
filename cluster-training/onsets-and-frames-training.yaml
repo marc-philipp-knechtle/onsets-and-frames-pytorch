@@ -1,0 +1,79 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: &jobname onsets-and-frames-training # this is an arbitrary name for the local container
+spec:
+  template:
+    spec:
+      priorityClassName: research-med
+      containers:
+        - name: *jobname
+          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-cluster2:0.1.2
+          imagePullPolicy: "IfNotPresent"
+          env:
+              - name: DATADIR
+                value: "/workspace/data"
+              - name: WORKSPACE
+                value: "/workspace"
+              - name: NUMBA_CACHE_DIR
+                value: "/tmp/numba_cache"
+          resources:
+            limits: &resources
+              nvidia.com/gpu: "1"
+              cpu: "16"
+              memory: "32Gi"
+            requests: *resources # sets requests = limits
+          command: ["python3", "onsets-and-frames-pytorch/train.py", "with", "train_on=Winterreise", "logdir=runs/02-11-winterreise", "checkpoint_interval=10000"]
+          # This command was used for debugging of the pods (infinite sleeping)
+          # command: ["/bin/bash", "-c", "--"]
+          # args: [ "while true; do sleep 30; done;" ]
+          volumeMounts:
+              - mountPath: /workspace/data # directory IN the container
+                name: &ceph_data data # matches volume-name from below
+              - mountPath: /workspace/runs # directory IN the container
+                name: &ceph_runs runs # matches volume-name from below
+              - mountPath: /workspace/onsets-and-frames-pytorch
+                name: &ceph_onsets-and-frames-pytorch onsets-and-frames-pytorch
+              - mountPath: /dev/shm # fixes a common pytorch issue. just always mount this here
+                name: dshm
+      imagePullSecrets:
+        - name: lsx-registry
+      restartPolicy: "Never"
+      volumes:
+          - name: *ceph_data
+            cephfs:
+                monitors:
+                    - 132.187.14.16
+                    - 132.187.14.17
+                    - 132.187.14.19
+                    - 132.187.14.20  # Not important for you, just copy along
+                user: extch1  # <namespace>
+                path: "/home/ext/ch1/studentMPK/datasets/" # The path you want to mount
+                secretRef: # The name of the secret for auth. Is always "ceph-secret"
+                  name: ceph-secret
+          - name: *ceph_runs
+            cephfs:
+                monitors:
+                    - 132.187.14.16
+                    - 132.187.14.17
+                    - 132.187.14.19
+                    - 132.187.14.20  # Not important for you, just copy along
+                user: extch1  # <namespace>
+                path: "/home/ext/ch1/studentMPK/onsets-and-frames-training/runs" # The path you want to mount
+                secretRef: # The name of the secret for auth. Is always "ceph-secret"
+                    name: ceph-secret
+          - name: *ceph_onsets-and-frames-pytorch
+            cephfs:
+                monitors:
+                    - 132.187.14.16
+                    - 132.187.14.17
+                    - 132.187.14.19
+                    - 132.187.14.20  # Not important for you, just copy along
+                user: extch1  # <namespace>
+                path: "/home/ext/ch1/studentMPK/onsets-and-frames-training/onsets-and-frames-pytorch" # The path you want to mount
+                secretRef: # The name of the secret for auth. Is always "ceph-secret"
+                    name: ceph-secret
+          - name: dshm # "needs" to be copied along, see above
+            emptyDir:
+                medium: "Memory"
+  backoffLimit: 0
