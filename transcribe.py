@@ -295,7 +295,6 @@ def main(args: argparse.Namespace):
     check_output_directory(args.save_path, args.clear_output)
     # todo add option to remove the files from input in watcher mode
     # todo adding progress bar in non-monitoring mode
-    # todo add warning in monitoring mode about missing cuda memory
     # todo adding removal of the files once ready when processing when in directory mode
     # -> easier debugging when sth goes wrong
     # -> it's possible to rerun some predictions without
