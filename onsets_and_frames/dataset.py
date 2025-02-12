@@ -19,6 +19,29 @@ from . import midi
 from .constants import *
 from .midi import parse_midi
 
+dataset_definitions = {
+    'maestro_training': lambda: MAESTRO(groups=['train'], sequence_length=DEFAULT_SEQUENCE_LENGTH),
+    'maestro_validation': lambda: MAESTRO(groups=['validation'], sequence_length=DEFAULT_SEQUENCE_LENGTH),
+    'winterreise_training': lambda: SchubertWinterreiseDataset(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
+                                                               sequence_length=DEFAULT_SEQUENCE_LENGTH),
+    'winterreise_validation': lambda: SchubertWinterreiseDataset(groups=['AL98'],
+                                                                 sequence_length=DEFAULT_SEQUENCE_LENGTH),
+    'winterreisevoice_training': lambda: SchubertWinterreiseVoice(
+        groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
+        sequence_length=DEFAULT_SEQUENCE_LENGTH),
+    'winterreisevoice_validation': lambda: SchubertWinterreiseVoice(groups=['AL98'],
+                                                                    sequence_length=DEFAULT_SEQUENCE_LENGTH),
+    'winterreisepiano_training': lambda: SchubertWinterreisePiano(
+        groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
+        sequence_length=DEFAULT_SEQUENCE_LENGTH),
+    'winterreisepiano_validation': lambda: SchubertWinterreisePiano(groups=['AL98'],
+                                                                    sequence_length=DEFAULT_SEQUENCE_LENGTH),
+    'maps_training': lambda: MAPS(
+        groups=['AkPnBcht', 'AkPnBsdf', 'AkPnCGdD', 'AkPnStgb', 'SptkBGAm', 'SptkBGCl', 'StbgTGd2'],
+        sequence_length=DEFAULT_SEQUENCE_LENGTH),
+    'maps_validation': lambda: MAPS(groups=['ENSTDkAm', 'ENSTDkCl'], sequence_length=DEFAULT_SEQUENCE_LENGTH)
+}
+
 
 class PianoRollAudioDataset(IterableDataset):
     path: str
