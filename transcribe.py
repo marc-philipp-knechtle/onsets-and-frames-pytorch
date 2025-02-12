@@ -158,8 +158,6 @@ def transcribe_dir(model_file: str, directory_to_transcribe: str, save_path: str
     This is an adapted version of transcribe_file. The goal of this method is to retain the directory structure.
     Sometimes, there are naming conventions included in the naming of the directories. This method is intended to retain
     them.
-    IMPORTANT DIFFERENCE!
-    The transcribe_dir method removes the processed files directly after they are finished processing!
     Args:
         remove_input:
         model_file:
