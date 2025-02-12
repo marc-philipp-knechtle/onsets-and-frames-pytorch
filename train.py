@@ -107,7 +107,7 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
     elif train_on == 'MAESTRO+Winterreise':
         maestro_training = MAESTRO(groups=train_groups, sequence_length=sequence_length)
         maestro_validation = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
-        winterreise_training = SchubertWinterreiseDataset(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QUI98', 'TR99'],
+        winterreise_training = SchubertWinterreiseDataset(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                                                           sequence_length=sequence_length)
         winterreise_validation = SchubertWinterreiseDataset(groups=['AL98'], sequence_length=sequence_length)
         dataset_training = ConcatDataset([maestro_training, winterreise_training])
@@ -123,7 +123,7 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
     elif train_on == 'all':
         maestro_training = MAESTRO(groups=train_groups, sequence_length=sequence_length)
         maestro_validation = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
-        winterreise_training = SchubertWinterreiseDataset(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QUI98', 'TR99'],
+        winterreise_training = SchubertWinterreiseDataset(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                                                           sequence_length=sequence_length)
         winterreise_validation = SchubertWinterreiseDataset(groups=['AL98'], sequence_length=sequence_length)
         winterreisevoice_training = SchubertWinterreiseVoice(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
