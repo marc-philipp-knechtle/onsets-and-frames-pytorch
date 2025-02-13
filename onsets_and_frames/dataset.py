@@ -43,8 +43,9 @@ dataset_definitions = {
     # Furtwangler1953,KeilberthFurtw1952,Krauss1953
     'wrd_test': lambda: WagnerRingDataset(groups=['Furtwangler1953', 'KeilberthFurtw1952', 'Krauss1953'],
                                           sequence_length=DEFAULT_SEQUENCE_LENGTH),
-    'b10_train': lambda: Bach10Dataset(groups=['01', '02', '03', '04'], sequence_length=DEFAULT_SEQUENCE_LENGTH),
-    'b10_validation': lambda: Bach10Dataset(groups=['05', '06'], sequence_length=DEFAULT_SEQUENCE_LENGTH)
+    'b10_train': lambda: Bach10Dataset(groups=['01', '02', '03', '04']),
+    'b10_validation': lambda: Bach10Dataset(groups=['05', '06']),
+    'PhA_train': lambda: PhenicxAnechoicDataset(groups=['beethoven', 'mahler'])
 }
 
 
@@ -620,13 +621,13 @@ class Bach10Dataset(PianoRollAudioDataset):
     bach10_tsv: str
     bach10_audio_wav: str
 
-    def __init__(self, path='data/Bach10', groups=None, sequence_length=None, seed=42, device=DEFAULT_DEVICE):
+    def __init__(self, path='data/Bach10', groups=None):
         self.bach10_midi = os.path.join(path, '_ann_audio_note_midi')
         self.bach10_csv = os.path.join(path, 'ann_audio_pitch_CSV')
         self.bach10_tsv = os.path.join(path, '_ann_audio_note_tsv')
         self.bach10_audio_wav = os.path.join(path, 'audio_wav_44100_mono')
 
-        super().__init__(path, groups, sequence_length, seed, device)
+        super().__init__(path, groups)
 
     @classmethod
     def available_groups(cls):
@@ -652,3 +653,29 @@ class Bach10Dataset(PianoRollAudioDataset):
         audio_tsv_filepaths = SchubertWinterreiseVoice.create_audio_tsv_1(filepaths_audio_midi, self.bach10_tsv)
         return audio_tsv_filepaths
 
+
+class PhenicxAnechoicDataset(PianoRollAudioDataset):
+    phenicx_anechoic_mixaudio_wav: str
+    phenicx_anechoic_annotations: str
+    phenicx_anechoic_tsv: str
+
+    def __init__(self, path='data/PHENICX-Anechoic', groups=None):
+        self.phenicx_anechoic_mixaudio_wav = os.path.join(path, 'mixaudio_wav_22050_mono')
+        self.phenicx_anechoic_annotations = os.path.join(path, 'annotations')
+        self.phenicx_anechoic_tsv = os.path.join(path, '_ann_audio_note_tsv')
+
+        super().__init__(path, groups)
+
+    @classmethod
+    def available_groups(cls):
+        return ['beethoven', 'bruckner', 'mahler', 'mozart']
+
+    def files(self, group):
+        logging.info(f'Loading files for group {group}, searching in {self.phenicx_anechoic_mixaudio_wav}')
+
+        audio_filepath: str = os.path.join(self.phenicx_anechoic_mixaudio_wav, group + '.wav')
+        midi_path: str = os.path.join(self.phenicx_anechoic_annotations, group, 'all.mid')
+
+        audio_tsv_filepaths = SchubertWinterreiseVoice.create_audio_tsv_1([(audio_filepath, midi_path)],
+                                                                          self.phenicx_anechoic_tsv)
+        return audio_tsv_filepaths
