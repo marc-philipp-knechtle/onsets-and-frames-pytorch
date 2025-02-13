@@ -635,7 +635,7 @@ class Bach10Dataset(PianoRollAudioDataset):
     def files(self, group: str):
         logging.info(f"Loading Files for group {group}, searching in {self.bach10_audio_wav}")
 
-        audio_filepaths: List[str] = glob(os.path.join(self.bach10_audio_wav, group + '*'))
+        audio_filepaths: List[str] = glob(os.path.join(self.bach10_audio_wav, group + '*' + '*.wav'))
         if len(audio_filepaths) != 1:
             raise RuntimeError(f'Expected one file for group {group}, found {len(audio_filepaths)}.')
 
@@ -651,3 +651,4 @@ class Bach10Dataset(PianoRollAudioDataset):
                                                                                             midi_filepaths)
         audio_tsv_filepaths = SchubertWinterreiseVoice.create_audio_tsv_1(filepaths_audio_midi, self.bach10_tsv)
         return audio_tsv_filepaths
+
