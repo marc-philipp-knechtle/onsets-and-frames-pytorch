@@ -42,7 +42,9 @@ dataset_definitions = {
     'maps_validation': lambda: MAPS(groups=['ENSTDkAm', 'ENSTDkCl'], sequence_length=DEFAULT_SEQUENCE_LENGTH),
     # Furtwangler1953,KeilberthFurtw1952,Krauss1953
     'wrd_test': lambda: WagnerRingDataset(groups=['Furtwangler1953', 'KeilberthFurtw1952', 'Krauss1953'],
-                                          sequence_length=DEFAULT_SEQUENCE_LENGTH)
+                                          sequence_length=DEFAULT_SEQUENCE_LENGTH),
+    'b10_train': lambda: Bach10Dataset(groups=['01', '02', '03', '04'], sequence_length=DEFAULT_SEQUENCE_LENGTH),
+    'b10_validation': lambda: Bach10Dataset(groups=['05', '06'], sequence_length=DEFAULT_SEQUENCE_LENGTH)
 }
 
 
@@ -628,7 +630,24 @@ class Bach10Dataset(PianoRollAudioDataset):
 
     @classmethod
     def available_groups(cls):
-        pass
+        return ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10']
 
-    def files(self, group):
-        pass
+    def files(self, group: str):
+        logging.info(f"Loading Files for group {group}, searching in {self.bach10_audio_wav}")
+
+        audio_filepaths: List[str] = glob(os.path.join(self.bach10_audio_wav, group + '*'))
+        if len(audio_filepaths) != 1:
+            raise RuntimeError(f'Expected one file for group {group}, found {len(audio_filepaths)}.')
+
+        ann_audio_note_filepaths_csv: List[str] = glob(os.path.join(self.bach10_csv, group + '*'))
+        if len(ann_audio_note_filepaths_csv) != 1:
+            raise RuntimeError(
+                f'Expected one annotation file for group {group}, found {len(ann_audio_note_filepaths_csv)}.')
+
+        midi_path = midi.save_nt_csv_as_midi(ann_audio_note_filepaths_csv, self.bach10_midi)
+        midi_filepaths: List[str] = glob(os.path.join(midi_path, '*.mid'))
+
+        filepaths_audio_midi: List[Tuple[str, str]] = WagnerRingDataset._combine_audio_midi(audio_filepaths,
+                                                                                            midi_filepaths)
+        audio_tsv_filepaths = SchubertWinterreiseVoice.create_audio_tsv_1(filepaths_audio_midi, self.bach10_tsv)
+        return audio_tsv_filepaths

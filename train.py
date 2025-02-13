@@ -126,6 +126,9 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
         logging.warning('training and validating only on test dataset because rest of dataset is not yet available.')
         dataset_training = ddef['wrd_test']()
         validation_dataset = ddef['wrd_test']()
+    elif train_on == 'Bach10':
+        dataset_training = ddef['b10_train']()
+        validation_dataset = ddef['b10_validation']()
     elif train_on == 'all':
         dataset_training = ChainDataset(
             [ddef['maestro_training'](), ddef['winterreise_training'](), ddef['winterreisevoice_training'](),
