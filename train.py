@@ -122,6 +122,10 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
         winterreisepiano_validation = SchubertWinterreisePiano(groups=['AL98'], sequence_length=sequence_length)
         dataset_training = ChainDataset([maestro_training, winterreisepiano_training])
         validation_dataset = ChainDataset([maestro_validation, winterreisepiano_validation])
+    elif train_on == 'WagnerRing':
+        logging.warning('training and validating only on test dataset because rest of dataset is not yet available.')
+        dataset_training = ddef['wrd_test']()
+        validation_dataset = ddef['wrd_test']()
     elif train_on == 'all':
         dataset_training = ChainDataset(
             [ddef['maestro_training'](), ddef['winterreise_training'](), ddef['winterreisevoice_training'](),
@@ -130,10 +134,8 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
             [ddef['maestro_validation'](), ddef['winterreise_validation'](), ddef['winterreisevoice_validation'](),
              ddef['winterreisepiano_validation'](), ddef['maps_validation']()])
     else:
-        dataset_training = MAPS(
-            groups=['AkPnBcht', 'AkPnBsdf', 'AkPnCGdD', 'AkPnStgb', 'SptkBGAm', 'SptkBGCl', 'StbgTGd2'],
-            sequence_length=sequence_length)
-        validation_dataset = MAPS(groups=['ENSTDkAm', 'ENSTDkCl'], sequence_length=validation_length)
+        raise RuntimeError(
+            'Unknown dataset specified for training. Please verify your argument with the possible arguments.')
     return dataset_training, validation_dataset
 
 
