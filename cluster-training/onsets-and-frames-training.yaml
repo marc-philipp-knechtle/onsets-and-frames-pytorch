@@ -19,9 +19,9 @@ spec:
                 value: "/tmp/numba_cache"
           resources:
             limits: &resources
-              nvidia.com/gpu: "1"
+              nvidia.com/gpu: "2"
               cpu: "16"
-              memory: "32Gi"
+              memory: "64Gi"
             requests: *resources # sets requests = limits
           command: ["python3", "onsets-and-frames-pytorch/train.py", "with", "train_on=all", "logdir=runs/02-11-maestro+winterreise+maps", "checkpoint_interval=10000"]
           # This command was used for debugging of the pods (infinite sleeping)
