@@ -12,7 +12,7 @@ WORKDIR /workspace
 RUN conda install pip
 RUN conda install GitPython
 
-COPY cluster-training/requirements.txt .
+COPY cluster-training-2/requirements.txt .
 RUN pip install -r /workspace/requirements.txt
 
 RUN mkdir /tmp/numba_cache & chmod 777 /tmp/numba_cache & NUMBA_CACHE_DIR=/tmp/numba_cache
