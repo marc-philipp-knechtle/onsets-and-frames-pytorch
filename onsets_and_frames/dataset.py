@@ -39,7 +39,10 @@ dataset_definitions = {
     'maps_training': lambda: MAPS(
         groups=['AkPnBcht', 'AkPnBsdf', 'AkPnCGdD', 'AkPnStgb', 'SptkBGAm', 'SptkBGCl', 'StbgTGd2'],
         sequence_length=DEFAULT_SEQUENCE_LENGTH),
-    'maps_validation': lambda: MAPS(groups=['ENSTDkAm', 'ENSTDkCl'], sequence_length=DEFAULT_SEQUENCE_LENGTH)
+    'maps_validation': lambda: MAPS(groups=['ENSTDkAm', 'ENSTDkCl'], sequence_length=DEFAULT_SEQUENCE_LENGTH),
+    # Furtwangler1953,KeilberthFurtw1952,Krauss1953
+    'wrd_test': lambda: WagnerRingDataset(groups=['Furtwangler1953', 'KeilberthFurtw1952', 'Krauss1953'],
+                                          sequence_length=DEFAULT_SEQUENCE_LENGTH)
 }
 
 
@@ -305,9 +308,7 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
         self.swd_tsv = os.path.join(path, '02_Annotations', '_ann_audio_note_tsv')
         self.swd_audio_wav = os.path.join(path, '01_RawData', 'audio_wav')
 
-        super().__init__(path,
-                         groups if groups is not None else ['AL98', 'FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
-                         sequence_length, seed, device)
+        super().__init__(path, groups, sequence_length, seed, device)
 
     def __str__(self):
         return 'SchubertWinterreiseDataset'
@@ -516,14 +517,15 @@ class SchubertWinterreiseVoice(SchubertWinterreiseDataset):
             audio_midi_combination.append((audio_voice_filepath, midi_voice_filepath))
         return audio_midi_combination
 
-    def create_audio_tsv(self, filepaths_audio_midi: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
+    @staticmethod
+    def create_audio_tsv_1(filepaths_audio_midi: List[Tuple[str, str]], tsv_dir: str) -> List[Tuple[str, str]]:
         result: List[Tuple[str, str]] = []
         audio_filepath: str
         midi_filepath: str
-        if not os.path.exists(self.swd_vocal_tsv):
-            os.makedirs(self.swd_vocal_tsv)
+        if not os.path.exists(tsv_dir):
+            os.makedirs(tsv_dir)
         for audio_filepath, midi_filepath in filepaths_audio_midi:
-            tsv_filepath = os.path.join(self.swd_vocal_tsv, os.path.basename(midi_filepath).replace('.mid', '.tsv'))
+            tsv_filepath = os.path.join(tsv_dir, os.path.basename(midi_filepath).replace('.mid', '.tsv'))
             if not os.path.exists(tsv_filepath):
                 midi.create_tsv_from_midi(midi_filepath, tsv_filepath)
             result.append((audio_filepath, tsv_filepath))
@@ -543,7 +545,7 @@ class SchubertWinterreiseVoice(SchubertWinterreiseDataset):
         midi_voice_filepaths: List[str] = glob(os.path.join(midi_path, '*.mid'))
         files_voice_midi_filepaths: List[Tuple[str, str]] = self.combine_audio_midi(voice_audio_filepaths,
                                                                                     midi_voice_filepaths)
-        voice_tsv_filepaths = self.create_audio_tsv(files_voice_midi_filepaths)
+        voice_tsv_filepaths = self.create_audio_tsv_1(files_voice_midi_filepaths, self.swd_vocal_tsv)
         return voice_tsv_filepaths
 
     def clear_computed(self):
@@ -555,3 +557,78 @@ class SchubertWinterreiseVoice(SchubertWinterreiseDataset):
         if os.path.exists(self.swd_tsv):
             shutil.rmtree(self.swd_tsv)
         super().clear_computed()
+
+
+class WagnerRingDataset(PianoRollAudioDataset):
+    wr_midi: str
+    wr_csv: str
+    wr_tsv: str
+    wr_audio_wav: str
+
+    def __init__(self, path='data/WagnerRing_v0-1', groups=None, sequence_length=None, seed=42, device=DEFAULT_DEVICE):
+        self.wr_midi = os.path.join(path, '02_Annotations', '_ann_audio_note_midi')
+        self.wr_csv = os.path.join(path, '02_Annotations', 'ann_audio_note')
+        self.wr_tsv = os.path.join(path, '02_Annotations', '_ann_audio_note_tsv')
+        self.wr_audio_wav = os.path.join(path, '01_RawData', 'audio_wav')
+
+        super().__init__(path, groups, sequence_length, seed, device)
+
+    def files(self, group):
+        logging.info(f"Loading Files for group {group}, searching in {self.wr_audio_wav}")
+        audio_filepaths: List[str] = SchubertWinterreiseDataset.get_filepaths_from_group(self.wr_audio_wav, group)
+        if len(audio_filepaths) == 0:
+            raise RuntimeError(f'Expected files for group {group}, found nothing.')
+
+        ann_audio_note_filepaths_csv: List[str] = glob(os.path.join(self.wr_csv, '*.csv'))
+        assert len(ann_audio_note_filepaths_csv) > 0
+
+        # save csv as midi
+        midi_path = midi.save_nt_csv_as_midi(ann_audio_note_filepaths_csv, self.wr_midi)
+        midi_filepaths: List[str] = glob(os.path.join(midi_path, '*.mid'))
+
+        # combine .wav with .midi
+        filepaths_audio_midi: List[Tuple[str, str]] = self._combine_audio_midi(audio_filepaths, midi_filepaths)
+
+        audio_tsv_filepaths = SchubertWinterreiseVoice.create_audio_tsv_1(filepaths_audio_midi, self.wr_tsv)
+        return audio_tsv_filepaths
+
+    @classmethod
+    def available_groups(cls):
+        return ['KeilberthFurtw1952', 'Furtwangler1953', 'Krauss1953', 'Solti1958', 'Karajan1966', 'Bohm1967',
+                'Swarowsky1968', 'Boulez1980', 'Janowski1980', 'Levine1987', 'Haitink1988', 'Sawallisch1989',
+                'Barenboim1991', 'Neuhold1993', 'Weigle2010', 'Thielemann2011']
+
+    @staticmethod
+    def _combine_audio_midi(audio_filepaths: List[str], midi_filepaths: List[str]) -> List[Tuple[str, str]]:
+        audio_midi_combination: List[Tuple[str, str]] = []
+        for audio_filepath in audio_filepaths:
+            basename = os.path.basename(audio_filepath).replace('.wav', '')
+            matching_files = [midi_file for midi_file in midi_filepaths if
+                              re.compile(fr".*{basename}.*").search(midi_file)]
+            if len(matching_files) != 1:
+                raise RuntimeError(f"Found different number of matching midi files than expected for: {audio_filepath}")
+            midi_filepath: str = matching_files[0]
+            audio_midi_combination.append((audio_filepath, midi_filepath))
+        return audio_midi_combination
+
+
+class Bach10Dataset(PianoRollAudioDataset):
+    bach10_midi: str
+    bach10_csv: str
+    bach10_tsv: str
+    bach10_audio_wav: str
+
+    def __init__(self, path='data/Bach10', groups=None, sequence_length=None, seed=42, device=DEFAULT_DEVICE):
+        self.bach10_midi = os.path.join(path, '_ann_audio_note_midi')
+        self.bach10_csv = os.path.join(path, 'ann_audio_pitch_CSV')
+        self.bach10_tsv = os.path.join(path, '_ann_audio_note_tsv')
+        self.bach10_audio_wav = os.path.join(path, 'audio_wav_44100_mono')
+
+        super().__init__(path, groups, sequence_length, seed, device)
+
+    @classmethod
+    def available_groups(cls):
+        pass
+
+    def files(self, group):
+        pass

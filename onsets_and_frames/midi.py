@@ -193,6 +193,31 @@ def save_csv_as_midi(csv_filenames: List[str], path: str, instrument_arg: str = 
     return path
 
 
+def save_nt_csv_as_midi(csv_filenames: List[str], path: str):
+    if not os.path.exists(path):
+        os.mkdir(path)
+    csv_filename: str
+    for csv_filename in csv_filenames:
+        ann_audio_note: pd.DataFrame = pd.read_csv(csv_filename, sep=';')
+        ann_audio_filepath = os.path.join(path, os.path.basename(csv_filename.replace('.csv', '.mid')))
+        if os.path.exists(ann_audio_filepath):
+            continue
+
+        piano_program = pretty_midi.instrument_name_to_program('Acoustic Grand Piano')
+        piano = pretty_midi.Instrument(program=piano_program)
+
+        for idx, row in ann_audio_note.iterrows():
+            onset: float = row[0]
+            offset: float = row[1]
+            pitch: int = int(row[2])
+            note = pretty_midi.Note(start=onset, end=offset, pitch=pitch, velocity=64)
+            piano.notes.append(note)
+        file: pretty_midi.PrettyMIDI = pretty_midi.PrettyMIDI()
+        file.instruments.append(piano)
+        file.write(ann_audio_filepath)
+    return path
+
+
 def create_tsv_from_midi(midi_filepath: str, tsv_filepath: str):
     midi_filename: str = os.path.basename(midi_filepath)
     logging.debug(f'Parsing midi file: {os.path.basename(midi_filename)}.')
