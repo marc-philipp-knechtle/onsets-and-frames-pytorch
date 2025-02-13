@@ -31,9 +31,10 @@ eps = sys.float_info.epsilon
 default_evaluation_datasets: List[Tuple[str, dataset_module.PianoRollAudioDataset]] = \
     [
         # ('runs/MAESTRO', MAESTRO(groups=['test'])),
-        ('runs/SchubertWinterreiseDataset', SchubertWinterreiseDataset(groups=['SC06'])),
-        ('runs/SchubertWinterreisePiano', SchubertWinterreisePiano(groups=['SC06'])),
-        ('runs/SchubertWinterreiseVoice', SchubertWinterreiseVoice(groups=['SC06']))]
+        # ('runs/SchubertWinterreiseDataset', SchubertWinterreiseDataset(groups=['SC06'])),
+        # ('runs/SchubertWinterreisePiano', SchubertWinterreisePiano(groups=['SC06'])),
+        # ('runs/SchubertWinterreiseVoice', SchubertWinterreiseVoice(groups=['SC06']))
+    ]
 
 
 # todo rename to create_dict
