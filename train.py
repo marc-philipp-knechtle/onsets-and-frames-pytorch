@@ -132,6 +132,9 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
     elif train_on == 'PhA':
         dataset_training = ddef['PhA_train']()
         validation_dataset = ddef['PhA_train']()
+    elif train_on == 'CSD':
+        dataset_training = ddef['CSD_train']()
+        validation_dataset = ddef['CSD_validation']()
     elif train_on == 'all':
         dataset_training = ChainDataset(
             [ddef['maestro_training'](), ddef['winterreise_training'](), ddef['winterreisevoice_training'](),

@@ -16,6 +16,19 @@ from joblib import Parallel, delayed
 from mir_eval.util import hz_to_midi
 from tqdm import tqdm
 
+def combine_midi_files(midi_filepaths: List[str], combined_midi_savepath: str) -> str:
+    if not os.path.exists(os.path.dirname(combined_midi_savepath)):
+        os.mkdir(os.path.dirname(combined_midi_savepath))
+
+    combined_midi = mido.MidiFile()
+
+    for midi_path in midi_filepaths:
+        midi_file = mido.MidiFile(midi_path)
+        for track in midi_file.tracks:
+            combined_midi.tracks.append(track)
+    combined_midi.save(combined_midi_savepath)
+    return combined_midi_savepath
+
 
 def parse_midi(path: str, global_key_offset: int = 0) -> np.ndarray:
     """
