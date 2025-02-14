@@ -22,10 +22,12 @@ from .midi import parse_midi
 dataset_definitions = {
     'maestro_training': lambda: MAESTRO(groups=['train'], sequence_length=DEFAULT_SEQUENCE_LENGTH),
     'maestro_validation': lambda: MAESTRO(groups=['validation'], sequence_length=DEFAULT_SEQUENCE_LENGTH),
-    'winterreise_training': lambda: SchubertWinterreiseDataset(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
-                                                               sequence_length=DEFAULT_SEQUENCE_LENGTH),
-    'winterreise_validation': lambda: SchubertWinterreiseDataset(groups=['AL98'],
-                                                                 sequence_length=DEFAULT_SEQUENCE_LENGTH),
+    'winterreise_training': lambda: SchubertWinterreiseDataset(groups=['FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
+                                                               sequence_length=DEFAULT_SEQUENCE_LENGTH,
+                                                               neither_split='train'),
+    'winterreise_validation': lambda: SchubertWinterreiseDataset(groups=['AL98', 'FI55'],
+                                                                 sequence_length=DEFAULT_SEQUENCE_LENGTH,
+                                                                 neither_split='validation'),
     'winterreisevoice_training': lambda: SchubertWinterreiseVoice(
         groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
         sequence_length=DEFAULT_SEQUENCE_LENGTH),
@@ -306,14 +308,18 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
     swd_tsv: str
     swd_audio_wav: str
 
+    neither_split: str
+
     def __init__(self,
                  path='data/Schubert_Winterreise_Dataset_v2-1', groups=None, sequence_length=None, seed=42,
-                 device=DEFAULT_DEVICE):
+                 device=DEFAULT_DEVICE, neither_split=None):
         # adding underscore to symbolize that these annotations are computationally created
         self.swd_midi = os.path.join(path, '02_Annotations', '_ann_audio_note_midi')
         self.swd_csv = os.path.join(path, '02_Annotations', 'ann_audio_note')
         self.swd_tsv = os.path.join(path, '02_Annotations', '_ann_audio_note_tsv')
         self.swd_audio_wav = os.path.join(path, '01_RawData', 'audio_wav')
+
+        self.neither_split = neither_split
 
         super().__init__(path, groups, sequence_length, seed, device)
 
@@ -364,9 +370,29 @@ class SchubertWinterreiseDataset(PianoRollAudioDataset):
             group: group to return the filenames for. See self.available_groups() for the groups
         Returns: List[Tuple[audio_filepath, tsv_filepath]] is a List of all audio tsv file combinations for this piece
         """
-        audio_filepaths: List[str] = self.get_filepaths_from_group(self.swd_audio_wav, group)
+        """
+        Definition of the neither split: 
+        Comparing: 
+        
+        For the version split, we use all songs in two versions for testing, two further versions for validation, 
+        and the remaining five versions for training. For the song split, we use the songs 17–24 of Winterreise 
+        in all versions for testing, songs 14–16 for validation, and songs 1–13 for training.
+        
+        testing: HU33, SC06, 17-24
+        validation: AL98, FI55 14-16
+        train: FI66, FI80, OL06, QU98, TR99 1-13
+        """
+        audio_filepaths: List[str] = sorted(self.get_filepaths_from_group(self.swd_audio_wav, group))
         if len(audio_filepaths) == 0:
             raise RuntimeError(f'Expected files for group {group}, found nothing.')
+
+        if self.neither_split is not None:
+            if self.neither_split == 'train':
+                audio_filepaths = audio_filepaths[:13]
+            elif self.neither_split == 'validation':
+                audio_filepaths = audio_filepaths[13:16]
+            elif self.neither_split == 'test':
+                audio_filepaths = audio_filepaths[16:25]
 
         ann_audio_note_filepaths_csv: List[str] = glob(os.path.join(self.swd_csv, '*.csv'))
         # save csv as midi
