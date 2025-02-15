@@ -700,14 +700,27 @@ class PhenicxAnechoicDataset(PianoRollAudioDataset):
     def available_groups(cls):
         return ['beethoven', 'bruckner', 'mahler', 'mozart']
 
+    @staticmethod
+    def create_audio_tsv(filepaths_audio_midi: List[Tuple[str, str]], tsv_dir: str) -> List[Tuple[str, str]]:
+        result: List[Tuple[str, str]] = []
+        audio_filepath: str
+        midi_filepath: str
+        if not os.path.exists(tsv_dir):
+            os.makedirs(tsv_dir)
+        for audio_filepath, midi_filepath in filepaths_audio_midi:
+            tsv_filepath = os.path.join(tsv_dir, os.path.basename(audio_filepath).replace('.wav', '.tsv'))
+            if not os.path.exists(tsv_filepath):
+                midi.create_tsv_from_midi(midi_filepath, tsv_filepath)
+            result.append((audio_filepath, tsv_filepath))
+        return result
+
     def files(self, group):
         logging.info(f'Loading files for group {group}, searching in {self.phenicx_anechoic_mixaudio_wav}')
 
         audio_filepath: str = os.path.join(self.phenicx_anechoic_mixaudio_wav, group + '.wav')
         midi_path: str = os.path.join(self.phenicx_anechoic_annotations, group, 'all.mid')
 
-        audio_tsv_filepaths = SchubertWinterreiseVoice.create_audio_tsv_1([(audio_filepath, midi_path)],
-                                                                          self.phenicx_anechoic_tsv)
+        audio_tsv_filepaths = self.create_audio_tsv([(audio_filepath, midi_path)], self.phenicx_anechoic_tsv)
         return audio_tsv_filepaths
 
 
