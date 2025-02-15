@@ -4,7 +4,7 @@ import re
 import os
 import sys
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 import numpy as np
 from sacred import Experiment
@@ -140,15 +140,15 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
         validation_dataset = ddef['MuN_validation']()
     elif train_on == 'comparing':
         dataset_training = ChainDataset([
-                                         # ddef['MuN_train'](), -> error
-                                         # ddef['winterreise_training'](),
-                                         # ddef['b10_train'](),
+                                         ddef['MuN_train'](),
+                                         ddef['winterreise_training'](),
+                                         ddef['b10_train'](),
                                          ddef['PhA_train'](),
                                          ddef['CSD_train']()
         ])
         validation_dataset = ChainDataset([
-            # ddef['winterreise_validation'](),
-            # ddef['b10_validation'](),
+            ddef['winterreise_validation'](),
+            ddef['b10_validation'](),
             ddef['CSD_validation']()
         ])
     elif train_on == 'all':
@@ -187,6 +187,17 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
     early_stopping = EarlyStopping()
     loop = tqdm(range(resume_iteration + 1, iterations + 1))
     try:
+        batch: Dict
+        """
+        Dict with:
+        path
+        audio
+        label
+        velocity
+        onset
+        offset
+        frame
+        """
         for i, batch in zip(loop, cycle(loader)):
             run_iteration(batch, checkpoint_interval, clip_gradient_norm, i, logdir, model, optimizer, scheduler,
                           validation_dataset, validation_interval, writer, early_stopping)
