@@ -63,7 +63,7 @@ class PianoRollAudioDataset(IterableDataset):
     random: np.random.RandomState
     data: List[Dict]
 
-    def __init__(self, path, groups=None, sequence_length=None, seed=42, device=DEFAULT_DEVICE):
+    def __init__(self, path, groups=None, sequence_length=DEFAULT_SEQUENCE_LENGTH, seed=42, device=DEFAULT_DEVICE):
         self.path = path
         self.groups = groups if groups is not None else self.available_groups()
         self.sequence_length = sequence_length
