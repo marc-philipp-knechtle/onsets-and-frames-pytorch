@@ -11,6 +11,11 @@ MIN_MIDI = 21
 MAX_MIDI = 108
 
 DEFAULT_SEQUENCE_LENGTH = 327680
+"""
+Each Tensor is spread to this sequence length 
+-> we have common tensor lengths 
+See the batches in train.py where each tensor in the batch has the same length!
+"""
 
 N_MELS = 229
 MEL_FMIN = 30
