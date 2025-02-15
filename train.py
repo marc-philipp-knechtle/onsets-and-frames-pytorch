@@ -142,13 +142,13 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
         dataset_training = ChainDataset([
                                          # ddef['MuN_train'](), -> error
                                          # ddef['winterreise_training'](),
-                                         ddef['b10_train'](),
-                                         ddef['PhA_train'](),
+                                         # ddef['b10_train'](),
+                                         # ddef['PhA_train'](),
                                          ddef['CSD_train']()
         ])
         validation_dataset = ChainDataset([
             # ddef['winterreise_validation'](),
-            ddef['b10_validation'](),
+            # ddef['b10_validation'](),
             ddef['CSD_validation']()
         ])
     elif train_on == 'all':
