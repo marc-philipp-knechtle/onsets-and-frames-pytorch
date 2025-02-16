@@ -5,10 +5,10 @@ metadata:
 spec:
   template:
     spec:
-      priorityClassName: research-med
+      priorityClassName: research-low
       containers:
         - name: *jobname
-          image: ls6-stud-registry.informatik.uni-wuerzburg.de/extch1-onsets-and-frames-training-2:0.0.1
+          image: ls6-stud-registry.informatik.uni-wuerzburg.de/onsets-and-frames-training-2:0.0.1
           imagePullPolicy: "IfNotPresent"
           env:
               - name: DATADIR
@@ -19,11 +19,11 @@ spec:
                 value: "/tmp/numba_cache"
           resources:
             limits: &resources
-              nvidia.com/gpu: "2"
+              nvidia.com/gpu: "1"
               cpu: "16"
-              memory: "64Gi"
+              memory: "32Gi"
             requests: *resources # sets requests = limits
-          command: ["python3", "onsets-and-frames-pytorch/train.py", "with", "train_on=all", "logdir=runs/02-11-maestro+winterreise+maps", "checkpoint_interval=10000"]
+          command: ["python3", "onsets-and-frames-pytorch/train.py", "with", "train_on=comparing+maestro", "logdir=runs/02-15-comparing+maestro-run", "checkpoint_interval=10000"]
           # This command was used for debugging of the pods (infinite sleeping)
           # command: ["/bin/bash", "-c", "--"]
           # args: [ "while true; do sleep 30; done;" ]
