@@ -12,7 +12,7 @@ import numpy as np
 import soundfile
 from torch import Tensor
 
-from torch.utils.data import IterableDataset
+from torch.utils.data import Dataset
 from tqdm import tqdm
 
 from . import midi
@@ -55,7 +55,7 @@ dataset_definitions = {
 }
 
 
-class PianoRollAudioDataset(IterableDataset):
+class PianoRollAudioDataset(Dataset):
     path: str
     groups: List[str]
     sequence_length: int
