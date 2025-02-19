@@ -139,14 +139,14 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
         dataset_training = ddef['MuN_train']()
         validation_dataset = ddef['MuN_validation']()
     elif train_on == 'comparing':
-        dataset_training = ChainDataset([
-                                         ddef['MuN_train'](),
-                                         ddef['winterreise_training'](),
-                                         ddef['b10_train'](),
-                                         ddef['PhA_train'](),
-                                         ddef['CSD_train']()
+        dataset_training = ConcatDataset([
+            ddef['MuN_train'](),
+            ddef['winterreise_training'](),
+            ddef['b10_train'](),
+            ddef['PhA_train'](),
+            ddef['CSD_train']()
         ])
-        validation_dataset = ChainDataset([
+        validation_dataset = ConcatDataset([
             ddef['winterreise_validation'](),
             ddef['b10_validation'](),
             ddef['CSD_validation']()
@@ -195,7 +195,7 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
     dataset_training, validation_dataset = create_datasets(sequence_length, train_groups, train_on, validation_groups,
                                                            validation_length)
     # shuffle=true is removed because the IterableDataset is shuffled by default!
-    loader = DataLoader(dataset_training, batch_size, drop_last=True)
+    loader = DataLoader(dataset_training, batch_size, drop_last=True, shuffle=True)
     model, optimizer, resume_iteration = create_model(device, learning_rate, logdir, model_complexity, resume_iteration)
     summary(model)
     scheduler = StepLR(optimizer, step_size=learning_rate_decay_steps, gamma=learning_rate_decay_rate)
