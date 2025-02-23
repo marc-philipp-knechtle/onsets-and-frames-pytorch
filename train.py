@@ -143,13 +143,13 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
             # ddef['MuN_train'](),
             ddef['winterreise_training'](),
             ddef['b10_train'](),
-            # ddef['PhA_train'](),
-            # ddef['CSD_train']()
+            ddef['PhA_train'](),
+            ddef['CSD_train']()
         ])
         validation_dataset = ConcatDataset([
             ddef['winterreise_validation'](),
             ddef['b10_validation'](),
-            # ddef['CSD_validation']()
+            ddef['CSD_validation']()
         ])
     elif train_on == 'comparing+maestro':
         dataset_training = ChainDataset([
@@ -159,12 +159,6 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
             ddef['PhA_train'](),
             ddef['CSD_train'](),
             ddef['maestro_training']()
-        ])
-        validation_dataset = ChainDataset([
-            ddef['winterreise_validation'](),
-            ddef['b10_validation'](),
-            ddef['CSD_validation'](),
-            ddef['maestro_validation']()
         ])
     elif train_on == 'all':
         dataset_training = ChainDataset(
