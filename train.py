@@ -12,7 +12,7 @@ from sacred.commands import print_config
 from sacred.observers import FileStorageObserver
 from torch.nn.utils import clip_grad_norm_
 from torch.optim.lr_scheduler import StepLR
-from torch.utils.data import DataLoader, ConcatDataset, Dataset, ChainDataset
+from torch.utils.data import DataLoader, ConcatDataset, Dataset
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
@@ -120,8 +120,8 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
         winterreisepiano_training = SchubertWinterreisePiano(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                                                              sequence_length=sequence_length)
         winterreisepiano_validation = SchubertWinterreisePiano(groups=['AL98'], sequence_length=sequence_length)
-        dataset_training = ChainDataset([maestro_training, winterreisepiano_training])
-        validation_dataset = ChainDataset([maestro_validation, winterreisepiano_validation])
+        dataset_training = ConcatDataset([maestro_training, winterreisepiano_training])
+        validation_dataset = ConcatDataset([maestro_validation, winterreisepiano_validation])
     elif train_on == 'WagnerRing':
         logging.warning('training and validating only on test dataset because rest of dataset is not yet available.')
         dataset_training = ddef['wrd_test']()
@@ -152,7 +152,7 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
             ddef['CSD_validation']()
         ])
     elif train_on == 'comparing+maestro':
-        dataset_training = ChainDataset([
+        dataset_training = ConcatDataset([
             ddef['MuN_train'](),
             ddef['winterreise_training'](),
             ddef['b10_train'](),
@@ -161,10 +161,10 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
             ddef['maestro_training']()
         ])
     elif train_on == 'all':
-        dataset_training = ChainDataset(
+        dataset_training = ConcatDataset(
             [ddef['maestro_training'](), ddef['winterreise_training'](), ddef['winterreisevoice_training'](),
              ddef['winterreisepiano_training'](), ddef['maps_training']()])
-        validation_dataset = ChainDataset(
+        validation_dataset = ConcatDataset(
             [ddef['maestro_validation'](), ddef['winterreise_validation'](), ddef['winterreisevoice_validation'](),
              ddef['winterreisepiano_validation'](), ddef['maps_validation']()])
     else:
@@ -188,7 +188,7 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
     dataset_validation: PianoRollAudioDataset
     dataset_training, dataset_validation = create_datasets(sequence_length, train_groups, train_on, validation_groups,
                                                            validation_length)
-    # shuffle=true is removed because the IterableDataset is shuffled by default!
+
     loader = DataLoader(dataset_training, batch_size, drop_last=True, shuffle=True)
     model, optimizer, resume_iteration = create_model(device, learning_rate, logdir, model_complexity, resume_iteration)
     summary(model)
@@ -218,10 +218,24 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
     except Exception as e:
         raise e
     finally:
-        # todo split ChainDataset to clear each one separately
         if clear_computed:
-            dataset_training.clear_computed()
-            dataset_validation.clear_computed()
+            if type(dataset_training) is ConcatDataset:
+                for dataset_impl in dataset_training.datasets:
+                    dataset_impl.clear_computed()
+            elif type(dataset_training) is PianoRollAudioDataset:
+                dataset_training.clear_computed()
+            else:
+                raise RuntimeError(
+                    f'Expected Concat Dataset or PianoRollAudioDataset but got something else: {type(dataset_training)}')
+
+            if type(dataset_validation) is ConcatDataset:
+                for dataset_impl in dataset_validation.datasets:
+                    dataset_impl.clear_computed()
+            elif type(dataset_validation) is PianoRollAudioDataset:
+                dataset_validation.clear_computed()
+            else:
+                raise RuntimeError(
+                    f'Expected Concat Dataset or PianoRollAudioDataset but got something else: {type(dataset_validation)}')
 
 
 def create_model(device, learning_rate, logdir, model_complexity, resume_iteration):
