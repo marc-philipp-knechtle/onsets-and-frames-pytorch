@@ -185,8 +185,8 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
         validation_groups = [str(leave_one_out)]
 
     dataset_training: PianoRollAudioDataset
-    validation_dataset: PianoRollAudioDataset
-    dataset_training, validation_dataset = create_datasets(sequence_length, train_groups, train_on, validation_groups,
+    dataset_validation: PianoRollAudioDataset
+    dataset_training, dataset_validation = create_datasets(sequence_length, train_groups, train_on, validation_groups,
                                                            validation_length)
     # shuffle=true is removed because the IterableDataset is shuffled by default!
     loader = DataLoader(dataset_training, batch_size, drop_last=True, shuffle=True)
@@ -209,7 +209,7 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
         """
         for i, batch in zip(loop, cycle(loader)):
             run_iteration(batch, checkpoint_interval, clip_gradient_norm, i, logdir, model, optimizer, scheduler,
-                          validation_dataset, validation_interval, writer, early_stopping)
+                          dataset_validation, validation_interval, writer, early_stopping)
             if early_stopping.early_stop:
                 logging.info(f'EARLY STOPPING! saving mode early-stopping-model-{i}.pt')
                 torch.save(early_stopping.best_model_state, os.path.join(logdir, f'early-stopping-model-{i}.pt'))
@@ -221,7 +221,7 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
         # todo split ChainDataset to clear each one separately
         if clear_computed:
             dataset_training.clear_computed()
-            validation_dataset.clear_computed()
+            dataset_validation.clear_computed()
 
 
 def create_model(device, learning_rate, logdir, model_complexity, resume_iteration):
