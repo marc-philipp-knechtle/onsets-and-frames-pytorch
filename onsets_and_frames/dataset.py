@@ -129,7 +129,7 @@ class PianoRollAudioDataset(Dataset):
     def clear_computed(self):
         logging.info("Clearing .pt files created by PianoRollAudioDataset.load().\n"
                      "This is because clear_computed is set as true.\n"
-                     "The .pt files are created again for this run. For a faster execution you have to disable"
+                     "The .pt files are created again for this run. For a faster execution you have to disable "
                      "clear_computed.")
         for root, dirs, files in os.walk(self.path):
             for file in files:
