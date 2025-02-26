@@ -924,3 +924,9 @@ class MusicNetDataset(PianoRollAudioDataset):
             filepaths_audio_midi.append((file, midi_filepath))
         audio_tsv_filepaths = SchubertWinterreiseVoice.create_audio_tsv_1(filepaths_audio_midi, self.mun_tsv)
         return audio_tsv_filepaths
+
+    def clear_computed(self):
+        logging.info(f'Clearing directories: {self.mun_tsv}, {self.mun_generated_midi_annotations}')
+        shutil.rmtree(self.mun_tsv)
+        shutil.rmtree(self.mun_generated_midi_annotations)
+        super().clear_computed()

@@ -220,19 +220,21 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
         raise e
     finally:
         if clear_computed:
-            if type(dataset_training) is ConcatDataset:
+            if isinstance(dataset_training, ConcatDataset):
+                dataset_impl: PianoRollAudioDataset
                 for dataset_impl in dataset_training.datasets:
                     dataset_impl.clear_computed()
-            elif type(dataset_training) is PianoRollAudioDataset:
+            elif isinstance(dataset_training, PianoRollAudioDataset):
                 dataset_training.clear_computed()
             else:
                 raise RuntimeError(
                     f'Expected Concat Dataset or PianoRollAudioDataset but got something else: {type(dataset_training)}')
 
-            if type(dataset_validation) is ConcatDataset:
+            if isinstance(dataset_validation, ConcatDataset):
+                dataset_impl: PianoRollAudioDataset
                 for dataset_impl in dataset_validation.datasets:
                     dataset_impl.clear_computed()
-            elif type(dataset_validation) is PianoRollAudioDataset:
+            elif isinstance(dataset_validation, PianoRollAudioDataset):
                 dataset_validation.clear_computed()
             else:
                 raise RuntimeError(
