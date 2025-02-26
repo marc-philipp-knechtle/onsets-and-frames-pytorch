@@ -10,6 +10,6 @@ docker build -f cluster-training/Dockerfile . -t $NAME
 docker login ls6-stud-registry.informatik.uni-wuerzburg.de
 docker push $NAME
 
-kubectl apply -f cluster-transcription-2/k8s-onsets-and-frames-transcription.yaml
+kubectl apply -f cluster-transcription/k8s-onsets-and-frames-transcription.yaml
 
 watch kubectl get pods
