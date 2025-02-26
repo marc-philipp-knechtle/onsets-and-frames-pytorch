@@ -3,12 +3,15 @@ import logging
 import os
 import re
 import shutil
+import pretty_midi
+
 from abc import abstractmethod
 from glob import glob
 from typing import List, Tuple, Dict
 
 import librosa
 import numpy as np
+import pandas as pd
 import soundfile
 from torch import Tensor
 
@@ -204,6 +207,8 @@ class PianoRollAudioDataset(Dataset):
         velocity = torch.zeros(n_steps, n_keys, dtype=torch.uint8)
 
         midi_data_from_tsv = np.loadtxt(tsv_path, delimiter='\t', skiprows=1)
+
+        midi.save_np_arr_as_midi(midi_data_from_tsv, 'data/MusicNet/tmp_midi/tmp.mid')
 
         for onset, offset, note, vel in midi_data_from_tsv:
             left = int(round(onset * SAMPLE_RATE / HOP_LENGTH))
@@ -814,8 +819,10 @@ class ChoralSingingDataset(PianoRollAudioDataset):
 
 class MusicNetDataset(PianoRollAudioDataset):
     mun_audio: str
-    mun_annotations: str
+    mun_generated_midi_annotations: str
     mun_tsv: str
+
+    MUN_ANNOTATION_SAMPLERATE: int = 44100
 
     test_set_files: Dict = {
         'MuN-3-test': ['2303', '1819', '2382'],
@@ -837,10 +844,35 @@ class MusicNetDataset(PianoRollAudioDataset):
 
     def __init__(self, path='data/MusicNet', groups=None):
         self.mun_audio = os.path.join(path, 'musicnet')
-        self.mun_annotations = os.path.join(path, 'musicnet_midis')
+        self.mun_generated_midi_annotations = os.path.join(path, '_musicnet_generated_midi')
         self.mun_tsv = os.path.join(path, '_ann_audio_note_tsv')
 
         super().__init__(path, groups)
+
+    def save_mun_csv_as_midi(self, csv_file, midi_path) -> str:
+        if not os.path.exists(midi_path):
+            os.mkdir(midi_path)
+
+        csv_annotations: pd.DataFrame = pd.read_csv(csv_file, sep=',')
+        midi_filename = os.path.basename(csv_file.replace('.csv', '.mid'))
+        midi_filepath = os.path.join(midi_path, midi_filename)
+        if os.path.exists(midi_filepath):
+            return str(midi_filepath)
+
+        piano_program = pretty_midi.instrument_name_to_program('Acoustic Grand Piano')
+        piano = pretty_midi.Instrument(program=piano_program)
+
+        for idx, row in csv_annotations.iterrows():
+            onset: float = row[0] / self.MUN_ANNOTATION_SAMPLERATE
+            offset: float = row[1] / self.MUN_ANNOTATION_SAMPLERATE
+            pitch: int = int(row[3])
+            note = pretty_midi.Note(start=onset, end=offset, pitch=pitch, velocity=64)
+            piano.notes.append(note)
+        file: pretty_midi.PrettyMIDI = pretty_midi.PrettyMIDI()
+        file.instruments.append(piano)
+        file.write(midi_filepath)
+
+        return str(midi_filepath)
 
     @classmethod
     def available_groups(cls):
@@ -852,6 +884,8 @@ class MusicNetDataset(PianoRollAudioDataset):
         logging.info(f'Loading files for group {group}, searching in {self.mun_audio}')
         all_audio_filepaths = glob(os.path.join(self.mun_audio, '**', '*.wav'), recursive=True)
         audio_filepaths_filtered: List[str] = []
+
+        # Filter audio files based on MuN groups defined above
         if 'test' in group:
             test_labels: List[str] = self.test_set_files[group]
             for filepath in all_audio_filepaths:
@@ -870,10 +904,11 @@ class MusicNetDataset(PianoRollAudioDataset):
 
         filepaths_audio_midi: List[Tuple[str, str]] = []
         for file in audio_filepaths_filtered:
-            identifier = os.path.basename(file)[:-4]  # cut .wav from identifier
-            midi_file = glob(os.path.join(self.mun_annotations, '**', identifier + '*'), recursive=True)
-            if len(midi_file) != 1:
-                raise RuntimeError(f'Expected 1 file for {file}, got {len(midi_file)}')
-            filepaths_audio_midi.append((file, midi_file[0]))
+            identifier = os.path.basename(file)[:-4]
+            csv_files = glob(os.path.join(self.mun_audio, '**', identifier + '*.csv'), recursive=True)
+            if len(csv_files) != 1:
+                raise RuntimeError(f'Expected 1 file for {file}, got {len(csv_files)}')
+            midi_filepath = self.save_mun_csv_as_midi(csv_files[0], self.mun_generated_midi_annotations)
+            filepaths_audio_midi.append((file, midi_filepath))
         audio_tsv_filepaths = SchubertWinterreiseVoice.create_audio_tsv_1(filepaths_audio_midi, self.mun_tsv)
         return audio_tsv_filepaths
