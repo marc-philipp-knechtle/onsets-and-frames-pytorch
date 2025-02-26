@@ -54,7 +54,8 @@ dataset_definitions = {
     'CSD_train': lambda: ChoralSingingDataset(groups=['Traditional_ElRossinyol']),
     'CSD_validation': lambda: ChoralSingingDataset(groups=['Guerrero_NinoDios']),
     'MuN_train': lambda: MusicNetDataset(groups=['MuN-10-var-train']),
-    'MuN_validation': lambda: MusicNetDataset(groups=['MuN-10-var-test'])
+    'MuN_validation': lambda: MusicNetDataset(groups=['MuN-validation']),
+    'MuN_test': lambda: MusicNetDataset(groups=['MuN-10-var-test'])
 }
 
 
@@ -172,7 +173,7 @@ class PianoRollAudioDataset(Dataset):
         audio: np.ndarray = np.array(audio).astype(np.float32)
         if len(audio.shape) > 1:
             # Convert Stereo to Mono
-            logging.warning('Audio is twodimensional - this is a stereo file! Converting to mono!')
+            logging.warning('Audio is two-dimensional - this is a stereo file! Converting to mono!')
             audio = audio.T
             audio = audio[0]
         if sr != SAMPLE_RATE:
@@ -207,8 +208,6 @@ class PianoRollAudioDataset(Dataset):
         velocity = torch.zeros(n_steps, n_keys, dtype=torch.uint8)
 
         midi_data_from_tsv = np.loadtxt(tsv_path, delimiter='\t', skiprows=1)
-
-        midi.save_np_arr_as_midi(midi_data_from_tsv, 'data/MusicNet/tmp_midi/tmp.mid')
 
         for onset, offset, note, vel in midi_data_from_tsv:
             left = int(round(onset * SAMPLE_RATE / HOP_LENGTH))
@@ -678,7 +677,7 @@ class Bach10Dataset(PianoRollAudioDataset):
         ann_audio_note_filepaths_csv: List[str] = glob(os.path.join(self.bach10_csv, group + '*'))
         if len(ann_audio_note_filepaths_csv) != 1:
             raise RuntimeError(
-                f'Expected one annotatiimon file for group {group}, found {len(ann_audio_note_filepaths_csv)}.')
+                f'Expected one annotation file for group {group}, found {len(ann_audio_note_filepaths_csv)}.')
 
         midi_path = midi.save_nt_csv_as_midi(ann_audio_note_filepaths_csv, self.bach10_midi)
         midi_filepaths: List[str] = glob(os.path.join(midi_path, '*.mid'))
@@ -824,6 +823,13 @@ class MusicNetDataset(PianoRollAudioDataset):
 
     MUN_ANNOTATION_SAMPLERATE: int = 44100
 
+    validation_set_files = ['1729', '1733', '1755', '1756', '1765', '1766', '1805', '1807', '1811', '1828', '1829',
+                            '1932', '1933', '2081', '2082', '2083', '2157', '2158', '2167', '2186', '2194', '2221',
+                            '2222', '2289', '2315', '2318', '2341', '2342', '2480', '2481', '2629', '2632', '2633']
+    """
+    MuN validation files, copied from 
+    """
+
     test_set_files: Dict = {
         'MuN-3-test': ['2303', '1819', '2382'],
         'MuN-10-test': ['2303', '1819', '2382', '2298', '2191', '2556', '2416', '2628', '1759', '2106'],
@@ -878,7 +884,7 @@ class MusicNetDataset(PianoRollAudioDataset):
     def available_groups(cls):
         return ['MuN-3-train', 'MuN-3-test', 'MuN-10-train', 'MuN-10-test', 'MuN-10-var-train', 'MuN-10-var-test',
                 'MuN-10-slow-train', 'MuN-10-slow-test', 'MuN-10-fast-train', 'MuN-10-fast-test',
-                'MuN-36-cyc-train', 'MuN-36-cyc-test']
+                'MuN-36-cyc-train', 'MuN-36-cyc-test', 'MuN-validation']
 
     def files(self, group):
         logging.info(f'Loading files for group {group}, searching in {self.mun_audio}')
@@ -891,19 +897,25 @@ class MusicNetDataset(PianoRollAudioDataset):
             for filepath in all_audio_filepaths:
                 if any(test_label in filepath for test_label in test_labels):
                     audio_filepaths_filtered.append(filepath)
-        if 'train' in group:
+        elif 'train' in group:
             group_test = group[:-5] + 'test'
-            test_labels: List[str] = self.test_set_files[group_test]
+            test_labels: List[str] = self.test_set_files[group_test] + self.validation_set_files
             for filepath in all_audio_filepaths:
                 if not any(test_label in filepath for test_label in test_labels):
                     audio_filepaths_filtered.append(filepath)
+        elif 'validation' in group:
+            for filepath in all_audio_filepaths:
+                if any(validation_label in filepath for validation_label in self.validation_set_files):
+                    audio_filepaths_filtered.append(filepath)
+        else:
+            raise ValueError(f'Specified unknown group for this dataset. Specified: {group}')
 
         if len(audio_filepaths_filtered) < 2:
             raise RuntimeError(
                 f'Received unexpected number of files for group {group}, found {len(audio_filepaths_filtered)}')
 
         filepaths_audio_midi: List[Tuple[str, str]] = []
-        for file in audio_filepaths_filtered:
+        for file in tqdm(audio_filepaths_filtered, desc='Converting MuN csv to midi and tsv.'):
             identifier = os.path.basename(file)[:-4]
             csv_files = glob(os.path.join(self.mun_audio, '**', identifier + '*.csv'), recursive=True)
             if len(csv_files) != 1:
