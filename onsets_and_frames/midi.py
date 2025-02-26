@@ -16,6 +16,7 @@ from joblib import Parallel, delayed
 from mir_eval.util import hz_to_midi
 from tqdm import tqdm
 
+
 def combine_midi_files(midi_filepaths: List[str], combined_midi_savepath: str) -> str:
     if not os.path.exists(os.path.dirname(combined_midi_savepath)):
         os.mkdir(os.path.dirname(combined_midi_savepath))
@@ -206,7 +207,16 @@ def save_csv_as_midi(csv_filenames: List[str], path: str, instrument_arg: str = 
     return path
 
 
-def save_nt_csv_as_midi(csv_filenames: List[str], path: str):
+def save_nt_csv_as_midi(csv_filenames: List[str], path: str) -> str:
+    """
+    Saving csv/tsv representation as midi
+    This method does not consider the velocity
+    Args:
+        csv_filenames: csv files to be converted to midi: format: [onset_time, offset_time, pitch]
+        path: path to save the midis to
+    Returns:
+        path where the midis are saved to
+    """
     if not os.path.exists(path):
         os.mkdir(path)
     csv_filename: str
