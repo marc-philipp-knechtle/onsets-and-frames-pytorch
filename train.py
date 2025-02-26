@@ -89,23 +89,23 @@ class EarlyStopping:
 def create_datasets(sequence_length: int, train_groups: List[str], train_on: str, validation_groups: List[str],
                     validation_length: int) -> Tuple[Dataset, Dataset]:
     dataset_training: Dataset
-    validation_dataset: Dataset
+    dataset_validation: Dataset
     if train_on == 'MAESTRO':
         dataset_training = MAESTRO(groups=train_groups, sequence_length=sequence_length)
-        validation_dataset = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
+        dataset_validation = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
     elif train_on == 'Winterreise':
         # HU33 and SC06 are intended for testing because they are the public ones
         dataset_training = SchubertWinterreiseDataset(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                                                       sequence_length=sequence_length, neither_split='train')
-        validation_dataset = SchubertWinterreiseDataset(groups=['AL98'], sequence_length=sequence_length)
+        dataset_validation = SchubertWinterreiseDataset(groups=['AL98'], sequence_length=sequence_length)
     elif train_on == 'WinterreiseVoice':
         dataset_training = SchubertWinterreiseVoice(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                                                     sequence_length=sequence_length)
-        validation_dataset = SchubertWinterreiseVoice(groups=['AL98'], sequence_length=sequence_length)
+        dataset_validation = SchubertWinterreiseVoice(groups=['AL98'], sequence_length=sequence_length)
     elif train_on == 'SchubertWinterreisePiano':
         dataset_training = SchubertWinterreisePiano(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                                                     sequence_length=sequence_length)
-        validation_dataset = SchubertWinterreisePiano(groups=['AL98'], sequence_length=sequence_length)
+        dataset_validation = SchubertWinterreisePiano(groups=['AL98'], sequence_length=sequence_length)
     elif train_on == 'MAESTRO+Winterreise':
         maestro_training = MAESTRO(groups=train_groups, sequence_length=sequence_length)
         maestro_validation = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
@@ -113,7 +113,7 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
                                                           sequence_length=sequence_length)
         winterreise_validation = SchubertWinterreiseDataset(groups=['AL98'], sequence_length=sequence_length)
         dataset_training = ConcatDataset([maestro_training, winterreise_training])
-        validation_dataset = ConcatDataset([maestro_validation, winterreise_validation])
+        dataset_validation = ConcatDataset([maestro_validation, winterreise_validation])
     elif train_on == 'MAESTRO+WinterreisePiano':
         maestro_training = MAESTRO(groups=train_groups, sequence_length=sequence_length)
         maestro_validation = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
@@ -121,23 +121,23 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
                                                              sequence_length=sequence_length)
         winterreisepiano_validation = SchubertWinterreisePiano(groups=['AL98'], sequence_length=sequence_length)
         dataset_training = ConcatDataset([maestro_training, winterreisepiano_training])
-        validation_dataset = ConcatDataset([maestro_validation, winterreisepiano_validation])
+        dataset_validation = ConcatDataset([maestro_validation, winterreisepiano_validation])
     elif train_on == 'WagnerRing':
         logging.warning('training and validating only on test dataset because rest of dataset is not yet available.')
         dataset_training = ddef['wrd_test']()
-        validation_dataset = ddef['wrd_test']()
+        dataset_validation = ddef['wrd_test']()
     elif train_on == 'Bach10':
         dataset_training = ddef['b10_train']()
-        validation_dataset = ddef['b10_validation']()
+        dataset_validation = ddef['b10_validation']()
     elif train_on == 'PhA':
         dataset_training = ddef['PhA_train']()
-        validation_dataset = ddef['PhA_train']()
+        dataset_validation = ddef['PhA_train']()
     elif train_on == 'CSD':
         dataset_training = ddef['CSD_train']()
-        validation_dataset = ddef['CSD_validation']()
+        dataset_validation = ddef['CSD_validation']()
     elif train_on == 'MuN':
         dataset_training = ddef['MuN_train']()
-        validation_dataset = ddef['MuN_validation']()
+        dataset_validation = ddef['MuN_validation']()
     elif train_on == 'comparing':
         dataset_training = ConcatDataset([
             ddef['MuN_train'](),
@@ -146,7 +146,7 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
             ddef['PhA_train'](),
             ddef['CSD_train']()
         ])
-        validation_dataset = ConcatDataset([
+        dataset_validation = ConcatDataset([
             ddef['winterreise_validation'](),
             ddef['b10_validation'](),
             ddef['CSD_validation']()
@@ -160,18 +160,18 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
             ddef['CSD_train'](),
             ddef['maestro_training']()
         ])
-        validation_dataset = None
+        dataset_validation = None
     elif train_on == 'all':
         dataset_training = ConcatDataset(
             [ddef['maestro_training'](), ddef['winterreise_training'](), ddef['winterreisevoice_training'](),
              ddef['winterreisepiano_training'](), ddef['maps_training']()])
-        validation_dataset = ConcatDataset(
+        dataset_validation = ConcatDataset(
             [ddef['maestro_validation'](), ddef['winterreise_validation'](), ddef['winterreisevoice_validation'](),
              ddef['winterreisepiano_validation'](), ddef['maps_validation']()])
     else:
         raise RuntimeError(
             'Unknown dataset specified for training. Please verify your argument with the possible arguments.')
-    return dataset_training, validation_dataset
+    return dataset_training, dataset_validation
 
 
 def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_norm: int,
