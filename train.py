@@ -149,7 +149,8 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
         dataset_validation = ConcatDataset([
             ddef['winterreise_validation'](),
             ddef['b10_validation'](),
-            ddef['CSD_validation']()
+            ddef['CSD_validation'](),
+            ddef['MuN_validation']()
         ])
     elif train_on == 'comparing+maestro':
         dataset_training = ConcatDataset([
