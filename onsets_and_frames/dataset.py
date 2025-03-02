@@ -927,6 +927,9 @@ class MusicNetDataset(PianoRollAudioDataset):
 
     def clear_computed(self):
         logging.info(f'Clearing directories: {self.mun_tsv}, {self.mun_generated_midi_annotations}')
-        shutil.rmtree(self.mun_tsv)
-        shutil.rmtree(self.mun_generated_midi_annotations)
+        if os.path.isdir(self.mun_tsv) and os.path.isdir(self.mun_generated_midi_annotations):
+            shutil.rmtree(self.mun_tsv)
+            shutil.rmtree(self.mun_generated_midi_annotations)
+        else:
+            raise RuntimeError(f'Could not clear directories {self.mun_tsv}, {self.mun_generated_midi_annotations}')
         super().clear_computed()
