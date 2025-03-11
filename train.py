@@ -274,7 +274,7 @@ def create_model(device, learning_rate, logdir, model_complexity, resume_iterati
     return model, optimizer, resume_iteration
 
 
-def run_iteration(batch, checkpoint_interval, clip_gradient_norm, i, logdir, model, optimizer, scheduler,
+def run_iteration(batch: Dict, checkpoint_interval, clip_gradient_norm, i, logdir, model, optimizer, scheduler,
                   validation_dataset, validation_interval, writer: SummaryWriter, early_stopping: EarlyStopping):
     predictions, losses = model.run_on_batch(batch)
     loss = sum(losses.values())
