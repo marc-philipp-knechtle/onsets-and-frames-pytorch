@@ -1,6 +1,70 @@
 import numpy as np
 import torch
 
+def extract_notes_from_frames(frames, threshold):
+    """
+    With this, you can use just the frame output to extract the notes
+    This does not use the onsets.
+    We just use a custom threshold to specify after what number of notes we consider a note to be detected.
+    """
+    frames = (frames > threshold).cpu().to(torch.uint8) # sets each value to 1 if it is above the threshold, 0 otherwis
+    pitches = []
+    intervals = []
+    velocities = []
+
+    value1 = frames[:1, :]
+    """
+    shape(88, 1)
+    """
+    value2 = frames[1: , :]
+    """
+    shape(n_frames - 1, 88) 
+    -> remove the first row of the frames tensor
+    """
+    value3 = frames[:-1, :]
+    """
+    -> removes the last row of the tensor
+    """
+    value4 = value2 - value3
+    """
+    difference in each row
+    current row minus next row
+    0 if current detected as 1  and next detected as one
+    1 if current is 1 and next is 0
+    -1 if currentis 0 and the next is 1
+    """
+
+    # We cannot use the same approach as in def extract_notes() here -> the frame output is completely different
+    value1_numpy = value1.numpy()
+    value2_numpy = value2.numpy()
+    value3_numpy = value3.numpy()
+    value4_numpy = value4.numpy()
+    frames_numpy = frames.numpy()
+
+    onsets_from_frames = torch.cat([frames[:1, :], frames[1:, :] - frames[:-1, :]], dim=0) == 1
+    onsets_from_frames_np = onsets_from_frames.numpy()
+    # we need to create this to only query the first element of each frame start
+
+    for nonzero in onsets_from_frames.nonzero():
+        frame = nonzero[0].item()
+        pitch = nonzero[1].item()
+
+        onset = frame
+        offset = frame
+
+        while frames[offset, pitch].item():
+            offset += 1
+            if offset == frames.shape[0]: # = we reach the end of the prediction
+                break
+
+        if offset > onset + 2:
+            pitches.append(pitch)
+            intervals.append([onset, offset])
+            velocities.append(70)
+    return np.array(pitches), np.array(intervals), np.array(velocities)
+
+
+
 
 def extract_notes(onsets, frames, velocity, onset_threshold=0.5, frame_threshold=0.5):
     """
@@ -33,12 +97,16 @@ def extract_notes(onsets, frames, velocity, onset_threshold=0.5, frame_threshold
     # onsets[1:, :] - onsets[:-1, :] = subtracts each row of onsets from the next row, creating the difference
     # This is true if the current index detects an onset and the next index does not.
     onset_diff = torch.cat([onsets[:1, :], onsets[1:, :] - onsets[:-1, :]], dim=0) == 1
+    """
+    Tensor of False where there is not an onset, true wherer there is
+    shape: [frames, bins] (bins=88, because of piano keys)
+    """
 
     pitches = []
     intervals = []
     velocities = []
 
-    for nonzero in onset_diff.nonzero():
+    for nonzero in onset_diff.nonzero(): # .nonzero() returns a tuple containing the indices of nonzero items
         frame = nonzero[0].item()
         pitch = nonzero[1].item()
 
@@ -46,14 +114,14 @@ def extract_notes(onsets, frames, velocity, onset_threshold=0.5, frame_threshold
         offset = frame
         velocity_samples = []
 
-        while onsets[offset, pitch].item() or frames[offset, pitch].item():
-            if onsets[offset, pitch].item():
+        while onsets[offset, pitch].item() or frames[offset, pitch].item(): # as long as there is an onset which is still detected
+            if onsets[offset, pitch].item(): # if there is still an onset detected
                 velocity_samples.append(velocity[offset, pitch].item())
             offset += 1
-            if offset == onsets.shape[0]:
+            if offset == onsets.shape[0]: # if we reach the end of the detection
                 break
 
-        if offset > onset:
+        if offset > onset: # If we have detected sth
             pitches.append(pitch)
             intervals.append([onset, offset])
             velocities.append(np.mean(velocity_samples) if len(velocity_samples) > 0 else 0)

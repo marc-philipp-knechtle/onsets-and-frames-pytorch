@@ -3,7 +3,7 @@ import os
 import shutil
 import sys
 import time
-from typing import List
+from typing import List, Dict, Any
 
 import numpy as np
 import librosa
@@ -61,7 +61,7 @@ def load_and_process_audio(flac_path, sequence_length, device, duration=None) ->
     return audio
 
 
-def transcribe(model: OnsetsAndFrames, audio: Tensor):
+def transcribe(model: OnsetsAndFrames, audio: Tensor) -> Dict[str, Any]:
     melspect = melspectrogram(audio.reshape(-1, audio.shape[-1])[:, :-1]).transpose(-1, -2)
 
     onset_pred, offset_pred, _, frame_pred, velocity_pred = model(melspect)
@@ -77,7 +77,8 @@ def transcribe(model: OnsetsAndFrames, audio: Tensor):
 
 
 def transcribe_file(model_file: str, audio_paths: List[str], save_path: str, sequence_length: int,
-                    onset_threshold: float, frame_threshold: float, device: str, show_summary: bool = True):
+                    onset_threshold: float, frame_threshold: float, device: str, show_summary: bool = True,
+                    save_frames: bool = False, save_onsets: bool = False):
     torch.cuda.empty_cache()
 
     model: OnsetsAndFrames = torch.load(model_file, map_location=device).eval()
@@ -88,7 +89,15 @@ def transcribe_file(model_file: str, audio_paths: List[str], save_path: str, seq
         print(f'{i + 1}/{len(audio_paths)}: Processing {audio_path}...', file=sys.stderr)
         audio = load_and_process_audio(audio_path, sequence_length, device, duration=None)
         try:
-            predictions: dict = transcribe(model, audio)
+            predictions: Dict[str, Any] = transcribe(model, audio)
+            """
+            shape(num_of_frames, piano_keys (88)) 
+            onset: Tensor
+            offset: Tensor
+            frame: Tensor
+            velocity: Tensor
+            """
+
         except RuntimeError:
             print("Loading a short duration of the clip to provide context")
             print("Emptying Cache:")
@@ -99,6 +108,7 @@ def transcribe_file(model_file: str, audio_paths: List[str], save_path: str, seq
 
         p_est, i_est, v_est = extract_notes(predictions['onset'], predictions['frame'], predictions['velocity'],
                                             onset_threshold, frame_threshold)
+        # p_est, i_est, v_est = decoding.extract_notes_from_frames(predictions['frame'], frame_threshold)
 
         scaling = HOP_LENGTH / SAMPLE_RATE
 
@@ -106,6 +116,10 @@ def transcribe_file(model_file: str, audio_paths: List[str], save_path: str, seq
         p_est = np.array([midi_to_hz(MIN_MIDI + midi) for midi in p_est])
 
         os.makedirs(save_path, exist_ok=True)
+        if save_frames:
+            torch.save(predictions['frame'], os.path.join(save_path, os.path.basename(audio_path) + '_frames.pt'))
+        if save_onsets:
+            torch.save(predictions['onset'], os.path.join(save_path, os.path.basename(audio_path) + '_onsets.pt'))
         pred_path = os.path.join(save_path, os.path.basename(audio_path) + '.pred.png')
         save_pianoroll(pred_path, predictions['onset'], predictions['frame'])
         midi_path = os.path.join(save_path, os.path.basename(audio_path) + '.pred.mid')
@@ -153,20 +167,12 @@ def count_files_recursively(dir_path: str) -> int:
 
 def transcribe_dir(model_file: str, directory_to_transcribe: str, save_path: str, sequence_length: int,
                    onset_threshold: float,
-                   frame_threshold: float, device: str, remove_input: bool = False):
+                   frame_threshold: float, device: str, remove_input: bool = False,
+                   save_frames: bool = False, save_onsets: bool = False):
     """
     This is an adapted version of transcribe_file. The goal of this method is to retain the directory structure.
     Sometimes, there are naming conventions included in the naming of the directories. This method is intended to retain
     them.
-    Args:
-        remove_input:
-        model_file:
-        directory_to_transcribe:
-        save_path:
-        sequence_length:
-        onset_threshold:
-        frame_threshold:
-        device:
     """
     duplicate_directory_structure(directory_to_transcribe, save_path)
     # This is the directory name of the input. We save this to prune the name from the path
@@ -183,7 +189,9 @@ def transcribe_dir(model_file: str, directory_to_transcribe: str, save_path: str
                 transcribe_file(model_file, [os.path.join(root, filename)],
                                 os.path.join(save_path, root_without_input),
                                 sequence_length,
-                                onset_threshold, frame_threshold, device, show_summary=False)
+                                onset_threshold, frame_threshold, device,
+                                show_summary=False,
+                                save_frames=save_frames, save_onsets=save_onsets)
             except KeyboardInterrupt:
                 print("Keyboard interrupt received, exiting... \n")
                 print(f"The input file will be retained, NOT REMOVED! ({os.path.join(root, filename)})")
@@ -278,7 +286,7 @@ def handle_file_or_directory(path: str, args: argparse.Namespace):
             transcribe_file(args.model_file, [os.path.join(dirpath, f)],
                             args.save_path,
                             args.sequence_length, args.onset_threshold,
-                            args.frame_threshold, args.device)
+                            args.frame_threshold, args.device, args.save_frames, args.save_onsets)
             if args.remove_input:
                 os.remove(os.path.join(dirpath, f))
         if os.path.isdir(os.path.join(dirpath, f)):
@@ -326,6 +334,8 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
     parser.add_argument('--clear-output', type=bool, default=False)
     parser.add_argument('--remove-input', type=bool, default=False)
+    parser.add_argument('--save-frames', type=bool, default=False)
+    parser.add_argument('--save-onsets', type=bool, default=False)
 
     # This argument cannot be used in conjunction with audio_paths
     parser.add_argument('--monitor-directory', default=None, type=str)
