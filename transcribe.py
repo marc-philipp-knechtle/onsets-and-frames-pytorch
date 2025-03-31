@@ -108,6 +108,7 @@ def transcribe_file(model_file: str, audio_paths: List[str], save_path: str, seq
 
         p_est, i_est, v_est = extract_notes(predictions['onset'], predictions['frame'], predictions['velocity'],
                                             onset_threshold, frame_threshold)
+        # Uncomment this if you want to make predictions based on the pure frame output
         # p_est, i_est, v_est = decoding.extract_notes_from_frames(predictions['frame'], frame_threshold)
 
         scaling = HOP_LENGTH / SAMPLE_RATE
@@ -286,7 +287,8 @@ def handle_file_or_directory(path: str, args: argparse.Namespace):
             transcribe_file(args.model_file, [os.path.join(dirpath, f)],
                             args.save_path,
                             args.sequence_length, args.onset_threshold,
-                            args.frame_threshold, args.device, args.save_frames, args.save_onsets)
+                            args.frame_threshold, args.device,
+                            save_frames=args.save_frames, save_onsets=args.save_onsets)
             if args.remove_input:
                 os.remove(os.path.join(dirpath, f))
         if os.path.isdir(os.path.join(dirpath, f)):
