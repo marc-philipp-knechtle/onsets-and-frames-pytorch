@@ -293,7 +293,8 @@ def handle_file_or_directory(path: str, args: argparse.Namespace):
                 os.remove(os.path.join(dirpath, f))
         if os.path.isdir(os.path.join(dirpath, f)):
             transcribe_dir(args.model_file, path, args.save_path, args.sequence_length,
-                           args.onset_threshold, args.frame_threshold, args.device, args.remove_input)
+                           args.onset_threshold, args.frame_threshold, args.device, args.remove_input,
+                           save_frames=args.save_frames, save_onsets=args.save_onsets)
             if args.remove_input:
                 for directory in os.listdir(path):
                     shutil.rmtree(os.path.join(path, directory))
