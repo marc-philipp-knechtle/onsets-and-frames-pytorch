@@ -78,7 +78,7 @@ def transcribe(model: OnsetsAndFrames, audio: Tensor) -> Dict[str, Any]:
 
 def transcribe_file(model_file: str, audio_paths: List[str], save_path: str, sequence_length: int,
                     onset_threshold: float, frame_threshold: float, device: str, show_summary: bool = True,
-                    save_frames: bool = False, save_onsets: bool = False):
+                    save_frames: bool = False, save_onsets: bool = False, should_save_pianoroll: bool = False):
     torch.cuda.empty_cache()
 
     model: OnsetsAndFrames = torch.load(model_file, map_location=device).eval()
@@ -122,7 +122,8 @@ def transcribe_file(model_file: str, audio_paths: List[str], save_path: str, seq
         if save_onsets:
             torch.save(predictions['onset'], os.path.join(save_path, os.path.basename(audio_path) + '_onsets.pt'))
         pred_path = os.path.join(save_path, os.path.basename(audio_path) + '.pred.png')
-        save_pianoroll(pred_path, predictions['onset'], predictions['frame'])
+        if should_save_pianoroll:
+            save_pianoroll(pred_path, predictions['onset'], predictions['frame'])
         midi_path = os.path.join(save_path, os.path.basename(audio_path) + '.pred.mid')
         save_midi(midi_path, p_est, i_est, v_est)
 
