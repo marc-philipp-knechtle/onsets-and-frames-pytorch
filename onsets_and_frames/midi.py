@@ -128,7 +128,8 @@ def parse_midi(path: str, global_key_offset: int = 0) -> np.ndarray:
     return np.array(notes)
 
 
-def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities) -> pretty_midi.PrettyMIDI:
+def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities,
+              sonify_midi: bool = False) -> pretty_midi.PrettyMIDI:
     """
     Save extracted notes as a MIDI file
     Parameters
@@ -137,14 +138,16 @@ def save_midi(path: str, pitches: np.ndarray, intervals: np.ndarray, velocities)
     pitches: np.ndarray of bin_indices
     intervals: list of (onset_time, offset_time)
     velocities: list of velocity values
+    sonify_midi: if True, the midi file is synthesized and saved as a wav file
     """
 
     midifile = create_midi(intervals, pitches, velocities)
     audio_data: np.ndarray = midifile.synthesize()
     # todo replace this with an implementation of pyfluidsynth
     #  (which can use other sounds compared to the default sine wave)
-    scipy.io.wavfile.write(os.path.join(os.path.dirname(path), os.path.basename(path) + '.wav'), 44100,
-                           audio_data)
+    if sonify_midi:
+        scipy.io.wavfile.write(os.path.join(os.path.dirname(path), os.path.basename(path) + '.wav'), 44100,
+                               audio_data)
     midifile.write(path)
     return midifile
 
