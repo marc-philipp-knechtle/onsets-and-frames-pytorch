@@ -93,6 +93,15 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
     if train_on == 'MAESTRO':
         dataset_training = MAESTRO(groups=train_groups, sequence_length=sequence_length)
         dataset_validation = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
+    elif train_on == 'MAESTRO+Maps':
+        dataset_training = ConcatDataset([
+            ddef['maestro_training'](),
+            ddef['maps_training']()
+        ])
+        dataset_validation = ConcatDataset([
+            ddef['maestro_validation'](),
+            ddef['maps_validation']()
+        ])
     elif train_on == 'Winterreise':
         # HU33 and SC06 are intended for testing because they are the public ones
         dataset_training = SchubertWinterreiseDataset(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
