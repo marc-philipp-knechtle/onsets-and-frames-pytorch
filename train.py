@@ -59,7 +59,7 @@ def config():
     validation_length = sequence_length
     validation_interval = 500
 
-    clear_computed: bool = True
+    clear_computed: bool = False
 
     ex.observers.append(FileStorageObserver.create(logdir))
 
