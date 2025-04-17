@@ -38,7 +38,7 @@ FROM pytorch/pytorch:1.9.0-cuda10.2-cudnn7-runtime
 #`$ /opt/conda/bin/conda run -n onsets-and-frames-pytorch python3 train.py`
 
 
-COPY ../environment.yml .
+COPY ../environment.yaml .
 
 # Required because of issue with prompt asking for geographic location
 ARG DEBIAN_FRONTEND=noninteractive
@@ -49,7 +49,7 @@ RUN apt-get update && \
 # duplicate to the pytorch dockerfile definition (just as a reminder)
 WORKDIR /workspace
 
-RUN conda env create -f environment.yml
+RUN conda env create -f environment.yaml
 # Make RUN commands use the new environment
 SHELL ["conda", "run", "-n", "onsets-and-frames-pytorch", "/bin/bash", "-c"]
 

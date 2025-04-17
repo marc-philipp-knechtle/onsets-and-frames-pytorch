@@ -31,7 +31,7 @@ testing. I assume that some of the cuda memory issues originate from the use of 
 this.
 
 ```bash
-conda env create -f environment.yml
+conda env create -f environment.yaml
 ```
 
 ### Downloading Dataset
