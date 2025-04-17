@@ -171,6 +171,19 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
             ddef['maestro_training']()
         ])
         dataset_validation = None
+    elif train_on == 'tmp-train-maestro-val-comparing':
+        dataset_training = ConcatDataset([ddef['maestro_training']()])
+        dataset_validation = ConcatDataset([
+            ddef['MuN_train'](),
+            ddef['winterreise_training'](),
+            ddef['b10_train'](),
+            ddef['PhA_train'](),
+            ddef['CSD_train'](),
+            ddef['winterreise_validation'](),
+            ddef['b10_validation'](),
+            ddef['CSD_validation'](),
+            ddef['MuN_validation']()
+        ])
     elif train_on == 'all':
         dataset_training = ConcatDataset(
             [ddef['maestro_training'](), ddef['winterreise_training'](), ddef['winterreisevoice_training'](),
