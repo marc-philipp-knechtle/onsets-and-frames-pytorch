@@ -8,7 +8,7 @@ spec:
       priorityClassName: research-low
       containers:
         - name: *jobname
-          image: ls6-stud-registry.informatik.uni-wuerzburg.de/onsets-and-frames-transcription-2:0.0.1
+          image: ls6-stud-registry.informatik.uni-wuerzburg.de/onsets-and-frames-transcription:0.0.1
           imagePullPolicy: "IfNotPresent"
           env:
               - name: DATADIR
@@ -25,7 +25,7 @@ spec:
             requests: *resources # sets requests = limits
 #           command: ["python3", "onsets-and-frames-pytorch/train.py", "with", "train_on=all", "logdir=runs/02-14-comparing-run", "checkpoint_interval=10000"]
 #          command: ["python3", "onsets-and-frames-pytorch/train.py", "with", "train_on=comparing", "logdir=runs/02-14-comparing-run", "checkpoint_interval=10000"]
-          command: ["python3", "onsets-and-frames-pytorch/transcribe.py", "models/early-stopping-model-83000.pt", "--audio_paths" , "data/trans-comparing-paper", "--save-path", "predictions", "--onset-threshold=0.4", "--frame-threshold=0.4"]
+          command: ["python3", "onsets-and-frames-pytorch/transcribe.py", "models/03-31-comparing-fix-pha.pt", "--audio_paths" , "data/trans-comparing-paper", "--save-path", "predictions", "--onset-threshold=0.4", "--frame-threshold=0.4", "--save-frames=True", "--save-onsets=True"]
           # This command was used for debugging of the pods (infinite sleeping)
           # command: ["/bin/bash", "-c", "--"]
           # args: [ "while true; do sleep 30; done;" ]
