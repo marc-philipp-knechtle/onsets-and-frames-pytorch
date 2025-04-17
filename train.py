@@ -30,7 +30,7 @@ ex = Experiment('train_transcriber')
 def config():
     logdir = 'runs/transcriber-' + datetime.now().strftime('%y%m%d-%H%M')
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    iterations = 500000
+    iterations = 500000  # -> epochs=iterations/batch_size = 500000/8 = 62500
     resume_iteration = None
     checkpoint_interval = 1000
     train_on = 'MAESTRO'
@@ -214,11 +214,14 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
         train_groups = list(all_years - {str(leave_one_out)})
         validation_groups = [str(leave_one_out)]
 
-    dataset_training: PianoRollAudioDataset
-    dataset_validation: PianoRollAudioDataset
+    dataset_training: ConcatDataset
     dataset_training, dataset_validation = create_datasets(sequence_length, train_groups, train_on, validation_groups,
                                                            validation_length)
-    loader = DataLoader(dataset_training, batch_size, drop_last=True, shuffle=True)
+    assert type(dataset_training) == ConcatDataset
+
+    sampler = create_sampler(dataset_training)
+
+    loader = DataLoader(dataset_training, batch_size, drop_last=True, sampler=sampler)
     model, optimizer, resume_iteration = create_model(device, learning_rate, logdir, model_complexity, resume_iteration)
     summary(model)
     scheduler = StepLR(optimizer, step_size=learning_rate_decay_steps, gamma=learning_rate_decay_rate)
@@ -267,6 +270,29 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
             else:
                 raise RuntimeError(
                     f'Expected Concat Dataset or PianoRollAudioDataset but got something else: {type(dataset_validation)}')
+
+
+def create_sampler(dataset_training: ConcatDataset) -> torch.utils.data.WeightedRandomSampler:
+    dataset_class_counts = []
+    ds: PianoRollAudioDataset
+    for ds in dataset_training.datasets:
+        dataset_class_counts.append(len(ds.data))
+    dataset_class_counts = torch.tensor(dataset_class_counts)
+    weight = 1. / dataset_class_counts.float()
+    """
+    shape(len(dataset_training))
+    """
+    samples_weight = []
+    i = 0
+    for ds in dataset_training.datasets:
+        ds_weight = float(weight[i])
+        samples_weight.extend([ds_weight] * len(ds.data))
+        i += 1
+    total_weight = sum(samples_weight)
+    max_weight = total_weight * 0.01  # max allow 1% of total_weight
+    samples_weight = [min(max_weight, weight) for weight in samples_weight]
+    sampler = torch.utils.data.WeightedRandomSampler(samples_weight, len(samples_weight), replacement=True)
+    return sampler
 
 
 def create_model(device, learning_rate, logdir, model_complexity, resume_iteration):
