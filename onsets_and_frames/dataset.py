@@ -164,7 +164,10 @@ class PianoRollAudioDataset(Dataset):
         """
         saved_data_path = audio_path.replace('.flac', '.pt').replace('.wav', '.pt')
         if os.path.exists(saved_data_path):
-            return torch.load(saved_data_path)
+            try:
+                return torch.load(saved_data_path)
+            except EOFError:
+                print(f'File {saved_data_path} is corrupted. Please inspect manually, or delete.')
 
         audio: np.ndarray
         audio, sr = soundfile.read(audio_path, dtype='int16')
