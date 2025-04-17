@@ -273,6 +273,13 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
 
 
 def create_sampler(dataset_training: ConcatDataset) -> torch.utils.data.WeightedRandomSampler:
+    """
+    following instructions from: https://discuss.pytorch.org/t/using-weightedrandomsampler-with-concatdataset/51968/2
+    cutoff at 1% (no sample is weighted more than 1% of the total weight)
+    Args:
+        dataset_training: Concat Dataset where we sample by the amount of files (data) in each dataset
+    Returns: WeightedRandomSampler
+    """
     dataset_class_counts = []
     ds: PianoRollAudioDataset
     for ds in dataset_training.datasets:
