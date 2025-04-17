@@ -170,7 +170,13 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
             ddef['CSD_train'](),
             ddef['maestro_training']()
         ])
-        dataset_validation = None
+        dataset_validation = ConcatDataset([
+            ddef['MuN_validation'](),
+            ddef['winterreise_validation'](),
+            ddef['b10_validation'](),
+            ddef['CSD_validation'](),
+            ddef['maestro_validation']()
+        ])
     elif train_on == 'tmp-train-maestro-val-comparing':
         dataset_training = ConcatDataset([ddef['maestro_training']()])
         dataset_validation = ConcatDataset([
@@ -212,7 +218,6 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
     dataset_validation: PianoRollAudioDataset
     dataset_training, dataset_validation = create_datasets(sequence_length, train_groups, train_on, validation_groups,
                                                            validation_length)
-
     loader = DataLoader(dataset_training, batch_size, drop_last=True, shuffle=True)
     model, optimizer, resume_iteration = create_model(device, learning_rate, logdir, model_complexity, resume_iteration)
     summary(model)
