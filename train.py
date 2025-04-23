@@ -34,7 +34,7 @@ def config():
     resume_iteration = None
     checkpoint_interval = 1000
     train_on = 'MAESTRO'
-    data_path = 'data'
+    data_path = 'data/MAESTRO'
 
     batch_size = 8
     sequence_length = 327680
