@@ -260,7 +260,11 @@ class MAESTRO(PianoRollAudioDataset):
             if len(files) == 0:
                 raise RuntimeError(f'Group {group} is empty')
         else:
-            metadata = json.load(open(os.path.join(self.path, 'maestro-v1.0.0.json')))
+            metadata_files = glob(os.path.join(self.path, '*.json'))
+            if len(metadata_files) != 1:
+                raise RuntimeError(
+                    f'Unexpected number of metadata files found. Found {len(metadata_files)}, Expected 1')
+            metadata = json.load(open(metadata_files[0]))
             files = sorted([(os.path.join(self.path, row['audio_filename'].replace('.wav', '.flac')),
                              os.path.join(self.path, row['midi_filename'])) for row in metadata if
                             row['split'] == group])
@@ -271,7 +275,7 @@ class MAESTRO(PianoRollAudioDataset):
         result = []
         audio_path: str
         midi_path: str
-        for audio_path, midi_path in files:
+        for audio_path, midi_path in tqdm(files):
             tsv_filename = midi_path.replace('.midi', '.tsv').replace('.mid', '.tsv')
             if not os.path.exists(tsv_filename):
                 midi_arr: np.ndarray = parse_midi(midi_path)
