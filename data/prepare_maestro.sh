@@ -1,7 +1,7 @@
 #! /bin/bash
 set -e
 
-MAESTRO_DIR="../data/MAESTRO"
+MAESTRO_DIR="MAESTRO-v2.0.0"
 
 if ! [ -d "$MAESTRO_DIR" ]; then
   echo Downloading the MAESTRO dataset \(87 GB\) ...
@@ -18,7 +18,10 @@ fi
 
 echo Converting the audio files to FLAC ...
 COUNTER=0
-for f in MAESTRO/*/*.wav; do
+
+search_path="${MAESTRO_DIR}/**/*.wav"
+echo Searching for wav files in "$search_path"
+for f in $search_path; do
     COUNTER=$((COUNTER + 1))
     echo -ne "\rConverting ($COUNTER/1184) ..."
     ffmpeg -y -loglevel fatal -i $f -ac 1 -ar 16000 ${f/\.wav/.flac}
