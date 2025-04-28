@@ -187,7 +187,7 @@ def transcribe_dir(model_file: str, directory_to_transcribe: str, save_path: str
         root_without_input = remove_prefix(root, input_dirname)
         root_without_input = remove_prefix(root_without_input, os.sep)
         for filename in files:
-            if not filename.endswith('.flac'): continue
+            if not filename.endswith('.wav'): continue
             try:
                 transcribe_file(model_file, [os.path.join(root, filename)],
                                 os.path.join(save_path, root_without_input),
