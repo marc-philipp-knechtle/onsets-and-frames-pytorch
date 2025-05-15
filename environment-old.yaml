@@ -1,73 +1,206 @@
 name: onsets-and-frames-pytorch
 channels:
+  - conda-forge
   - defaults
-  - conda-forge # necessary because of librosa requirement below (instead of librosa beeing installed via pip)
 dependencies:
   - _libgcc_mutex=0.1=main
   - _openmp_mutex=5.1=1_gnu
+  - appdirs=1.4.4=pyhd3eb1b0_0
+  - blas=1.0=mkl
+  - brotli=1.0.9=h5eee18b_8
+  - brotli-bin=1.0.9=h5eee18b_8
+  - brotlipy=0.7.0=py37h27cfd23_1003
+  - bzip2=1.0.8=h5eee18b_6
   - ca-certificates=2024.3.11=h06a4308_0
+  - charset-normalizer=2.0.4=pyhd3eb1b0_0
+  - cryptography=39.0.1=py37h9ce1e76_0
+  - cycler=0.11.0=pyhd3eb1b0_0
+  - cyrus-sasl=2.1.28=h9c0eb46_1
+  - dbus=1.13.18=hb2f20db_0
+  - expat=2.6.4=h6a678d5_0
+  - ffmpeg=4.2.2=h20bf706_0
+  - fftw=3.3.9=h5eee18b_2
+  - flit-core=3.6.0=pyhd3eb1b0_0
+  - fontconfig=2.14.1=h4c34cd2_2
+  - fonttools=4.25.0=pyhd3eb1b0_0
+  - freetype=2.12.1=h4a9f257_0
+  - gettext=0.21.0=h39681ba_1
+  - giflib=5.2.1=h5eee18b_3
+  - glib=2.78.4=h6a678d5_0
+  - glib-tools=2.78.4=h6a678d5_0
+  - gmp=6.2.1=h295c915_3
+  - gnutls=3.6.15=he1e5248_0
+  - gst-plugins-base=1.14.1=h6a678d5_1
+  - gstreamer=1.14.1=h5eee18b_1
+  - icu=73.1=h6a678d5_0
+  - importlib-resources=6.0.0=pyhd8ed1ab_1
+  - importlib_metadata=4.11.3=hd3eb1b0_0
+  - importlib_resources=6.0.0=pyhd8ed1ab_0
+  - intel-openmp=2021.4.0=h06a4308_3561
+  - jpeg=9e=h5eee18b_1
+  - kiwisolver=1.4.4=py37h6a678d5_0
+  - krb5=1.20.1=h568e23c_1
+  - lame=3.100=h7b6447c_0
+  - lcms2=2.12=h3be6417_0
   - ld_impl_linux-64=2.38=h1181459_1
+  - lerc=3.0=h295c915_0
+  - libbrotlicommon=1.0.9=h5eee18b_8
+  - libbrotlidec=1.0.9=h5eee18b_8
+  - libbrotlienc=1.0.9=h5eee18b_8
+  - libclang=14.0.6=default_hc6dbbc7_2
+  - libclang13=14.0.6=default_he11475f_2
+  - libcups=2.4.2=ha637b67_0
+  - libdeflate=1.17=h5eee18b_1
+  - libedit=3.1.20230828=h5eee18b_0
   - libffi=3.4.4=h6a678d5_0
+  - libflac=1.3.4=h27087fc_0
   - libgcc-ng=11.2.0=h1234567_1
+  - libgfortran-ng=11.2.0=h00389a5_1
+  - libgfortran5=11.2.0=h1234567_1
+  - libglib=2.78.4=hdc74915_0
   - libgomp=11.2.0=h1234567_1
-  - librosa=0.8.0
-  - matplotlib
-  - numba
+  - libiconv=1.16=h5eee18b_3
+  - libidn2=2.3.4=h5eee18b_0
+  - libllvm11=11.1.0=h9e868ea_6
+  - libllvm14=14.0.6=hecde1de_4
+  - libogg=1.3.5=h27cfd23_1
+  - libopus=1.3.1=h7b6447c_0
+  - libpng=1.6.39=h5eee18b_0
+  - libpq=12.15=h37d81fd_1
+  - librosa=0.8.0=pyh9f0ad1d_0
+  - libsndfile=1.0.31=h9c3ff4c_1
   - libstdcxx-ng=11.2.0=h1234567_1
+  - libtasn1=4.19.0=h5eee18b_0
+  - libtiff=4.5.1=h6a678d5_0
+  - libunistring=0.9.10=h27cfd23_0
+  - libuuid=1.41.5=h5eee18b_0
+  - libvorbis=1.3.7=h7b6447c_0
+  - libvpx=1.7.0=h439df22_0
+  - libwebp=1.2.4=h11a3e52_1
+  - libwebp-base=1.2.4=h5eee18b_1
+  - libxcb=1.15=h7f8727e_0
+  - libxkbcommon=1.0.1=h5eee18b_1
+  - libxml2=2.10.4=hf1b16e4_1
+  - lz4-c=1.9.4=h6a678d5_1
+  - matplotlib=3.5.3=py37h06a4308_0
+  - matplotlib-base=3.5.3=py37hf590b9c_0
+  - mkl=2021.4.0=h06a4308_640
+  - mkl-service=2.4.0=py37h7f8727e_0
+  - mkl_fft=1.3.1=py37hd3c417c_0
+  - mkl_random=1.2.2=py37h51133e4_0
+  - munkres=1.1.4=py_0
+  - mysql=5.7.24=he378463_2
   - ncurses=6.4=h6a678d5_0
+  - nettle=3.7.3=hbbd107a_1
+  - openh264=2.1.1=h4ff587b_0
   - openssl=1.1.1w=h7f8727e_0
+  - pcre2=10.42=hebb0a14_1
   - pip=22.3.1=py37h06a4308_0
+  - pyopenssl=23.0.0=py37h06a4308_0
+  - pyqt=5.15.4=py37hd23a5d3_0
+  - pyqt5-sip=12.9.0=py37hd23a5d3_0
+  - pysocks=1.7.1=py37_1
   - python=3.7.16=h7a1cb2a_0
+  - python-dateutil=2.8.2=pyhd3eb1b0_0
+  - python_abi=3.7=2_cp37m
   - pyyaml=6.0=py37h5eee18b_1
+  - qt-main=5.15.2=h110a718_10
   - readline=8.2=h5eee18b_0
-  # Commented because of strange issues with tensorboard -> solution was downgrade
-  # https://stackoverflow.com/questions/70520120/attributeerror-module-setuptools-distutils-has-no-attribute-version
-  # - setuptools=65.6.3=py37h06a4308_0
-  - setuptools=59.5.0
+  - setuptools=59.5.0=py37h89c1867_0
+  - sip=6.5.1=py37h295c915_0
   - sqlite=3.41.2=h5eee18b_0
+  - tbb=2021.8.0=hdb19cb5_0
   - tk=8.6.12=h1ccaba5_0
+  - toml=0.10.2=pyhd3eb1b0_0
+  - tornado=6.2=py37h5eee18b_0
+  - typing_extensions=4.4.0=py37h06a4308_0
   - watchdog=2.1.6=py37h06a4308_0
+  - x264=1!157.20191217=h7b6447c_0
   - xz=5.4.2=h5eee18b_0
   - yaml=0.2.5=h7b6447c_0
   - zlib=1.2.13=h5eee18b_0
+  - zstd=1.5.5=hc292b87_0
   - pip:
     - absl-py==0.10.0
-    - appdirs==1.4.4
+    - anyio==3.7.1
+    - argon2-cffi==23.1.0
+    - argon2-cffi-bindings==21.2.0
+    - attrs==24.2.0
     - audioread==2.1.8
+    - backcall==0.2.0
+    - beautifulsoup4==4.13.3
+    - bleach==6.0.0
     - cachetools==4.1.1
     - certifi==2020.6.20
     - cffi==1.14.2
     - chardet==3.0.4
+    - debugpy==1.7.0
     - decorator==4.4.2
+    - defusedxml==0.7.1
     - docopt==0.6.2
+    - entrypoints==0.4
+    - exceptiongroup==1.2.2
+    - fastjsonschema==2.21.1
     - future==0.18.2
     - google-auth==1.21.1
     - google-auth-oauthlib==0.4.1
     - grpcio==1.32.0
     - idna==2.10
     - importlib-metadata==1.7.0
+    - ipykernel==6.16.2
+    - ipython==7.34.0
+    - ipython-genutils==0.2.0
+    - jedi==0.19.2
+    - jinja2==3.1.6
     - joblib==0.16.0
     - jsonpickle==0.9.6
-    # - librosa==0.7.2
+    - jsonschema==4.17.3
+    - jupyter-client==7.4.9
+    - jupyter-core==4.12.0
+    - jupyter-server==1.24.0
+    - jupyterlab-pygments==0.2.2
     - llvmlite==0.34.0
     - markdown==3.2.2
+    - markupsafe==2.1.5
+    - matplotlib-inline==0.1.6
     - mido==1.2.9
     - mir-eval==0.6
+    - mistune==3.0.2
     - munch==2.5.0
-#     - numba==0.51.2
+    - nbclassic==1.2.0
+    - nbclient==0.7.4
+    - nbconvert==7.6.0
+    - nbformat==5.8.0
+    - nest-asyncio==1.6.0
+    - notebook==6.5.7
+    - notebook-shim==0.2.4
+    - numba==0.51.2
     - numpy==1.19.1
     - oauthlib==3.1.0
     - packaging==20.4
-    - pandas
+    - pandas==1.3.5
+    - pandocfilters==1.5.1
+    - parso==0.8.4
+    - pexpect==4.9.0
+    - pickleshare==0.7.5
     - pillow==7.2.0
+    - pkgutil-resolve-name==1.3.10
     - pooch==1.2.0
     - pretty-midi==0.2.9
+    - prometheus-client==0.17.1
+    - prompt-toolkit==3.0.48
     - protobuf==3.13.0
+    - psutil==7.0.0
+    - ptyprocess==0.7.0
     - py-cpuinfo==7.0.0
     - pyasn1==0.4.8
     - pyasn1-modules==0.2.8
     - pycparser==2.20
+    - pygments==2.17.2
     - pyparsing==2.4.7
+    - pyrsistent==0.19.3
+    - pytz==2024.1
+    - pyzmq==26.2.1
     - requests==2.24.0
     - requests-oauthlib==1.3.0
     - resampy==0.2.2
@@ -75,16 +208,23 @@ dependencies:
     - sacred==0.7.4
     - scikit-learn==0.23.2
     - scipy==1.5.2
+    - send2trash==1.8.3
     - six==1.15.0
+    - sniffio==1.3.1
     - soundfile==0.10.3.post1
+    - soupsieve==2.4.1
     - tensorboard==2.3.0
     - tensorboard-plugin-wit==1.7.0
+    - terminado==0.17.1
     - threadpoolctl==2.1.0
-    # - torch==1.2.0
-    # This upgrade is necessary because the Docker runs with a later pytorch version
-    - torch == 1.9.1
+    - tinycss2==1.2.1
+    - torch==1.9.1
     - tqdm==4.48.2
+    - traitlets==5.9.0
     - urllib3==1.25.10
+    - wcwidth==0.2.13
+    - webencodings==0.5.1
+    - websocket-client==1.6.1
     - werkzeug==1.0.1
     - wheel==0.35.1
     - wrapt==1.12.1
