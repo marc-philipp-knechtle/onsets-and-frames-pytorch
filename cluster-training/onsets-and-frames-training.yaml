@@ -20,11 +20,11 @@ spec:
           resources:
             limits: &resources
               nvidia.com/gpu: "2"
-              cpu: "16"
+              cpu: "8"
               memory: "64Gi"
             requests: *resources # sets requests = limits
 #           command: ["python3", "onsets-and-frames-pytorch/train.py", "with", "train_on=all", "logdir=runs/02-14-comparing-run", "checkpoint_interval=10000"]
-          command: ["python3", "onsets-and-frames-pytorch/train.py", "with", "train_on=comparing", "logdir=runs/04-17-comparing-weighted", "checkpoint_interval=10000"]
+          command: ["python3", "onsets-and-frames-pytorch/train.py", "with", "train_on=MAPS", "logdir=runs/05-15-maps", "checkpoint_interval=10000"]
           # This command was used for debugging of the pods (infinite sleeping)
           # command: ["/bin/bash", "-c", "--"]
           # args: [ "while true; do sleep 30; done;" ]
