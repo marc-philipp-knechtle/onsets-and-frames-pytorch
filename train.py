@@ -87,13 +87,12 @@ class EarlyStopping:
             self.counter = 0
 
 
-def create_datasets(sequence_length: int, train_groups: List[str], train_on: str, data_path: str,
-                    validation_groups: List[str], validation_length: int) -> Tuple[Dataset, Dataset]:
+def create_datasets(sequence_length: int, train_on: str, data_path: str) -> Tuple[Dataset, Dataset]:
     dataset_training: Dataset
     dataset_validation: Dataset
     if train_on == 'MAESTRO':
-        dataset_training = MAESTRO(groups=train_groups, sequence_length=sequence_length, path=data_path)
-        dataset_validation = MAESTRO(groups=validation_groups, sequence_length=sequence_length, path=data_path)
+        dataset_training = MAESTRO(groups=['train'], sequence_length=sequence_length, path=data_path)
+        dataset_validation = MAESTRO(groups=['validation'], sequence_length=sequence_length, path=data_path)
     elif train_on == 'MAESTRO+Maps':
         dataset_training = ConcatDataset([
             ddef['maestro_training'](),
@@ -124,16 +123,16 @@ def create_datasets(sequence_length: int, train_groups: List[str], train_on: str
                                                     sequence_length=sequence_length)
         dataset_validation = SchubertWinterreisePiano(groups=['AL98'], sequence_length=sequence_length)
     elif train_on == 'MAESTRO+Winterreise':
-        maestro_training = MAESTRO(groups=train_groups, sequence_length=sequence_length)
-        maestro_validation = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
+        maestro_training = MAESTRO(groups=['train'], sequence_length=sequence_length)
+        maestro_validation = MAESTRO(groups=['validation'], sequence_length=sequence_length)
         winterreise_training = SchubertWinterreiseDataset(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                                                           sequence_length=sequence_length)
         winterreise_validation = SchubertWinterreiseDataset(groups=['AL98'], sequence_length=sequence_length)
         dataset_training = ConcatDataset([maestro_training, winterreise_training])
         dataset_validation = ConcatDataset([maestro_validation, winterreise_validation])
     elif train_on == 'MAESTRO+WinterreisePiano':
-        maestro_training = MAESTRO(groups=train_groups, sequence_length=sequence_length)
-        maestro_validation = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
+        maestro_training = MAESTRO(groups=['train'], sequence_length=sequence_length)
+        maestro_validation = MAESTRO(groups=['validation'], sequence_length=sequence_length)
         winterreisepiano_training = SchubertWinterreisePiano(groups=['FI55', 'FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                                                              sequence_length=sequence_length)
         winterreisepiano_validation = SchubertWinterreisePiano(groups=['AL98'], sequence_length=sequence_length)
@@ -251,8 +250,7 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
         validation_groups = [str(leave_one_out)]
 
     dataset_training: ConcatDataset
-    dataset_training, dataset_validation = create_datasets(sequence_length, train_groups, train_on, data_path,
-                                                           validation_groups, validation_length)
+    dataset_training, dataset_validation = create_datasets(sequence_length, train_on, data_path)
 
     if type(dataset_training) == ConcatDataset:
         sampler = create_sampler(dataset_training)

@@ -3,6 +3,7 @@ A rough translation of Magenta's Onsets and Frames implementation [1].
 
     [1] https://github.com/tensorflow/magenta/blob/master/magenta/models/onsets_frames_transcription/model.py
 """
+from typing import Dict
 
 import torch
 import torch.nn.functional as F
@@ -47,6 +48,48 @@ class ConvStack(nn.Module):
         x = x.transpose(1, 2).flatten(-2)
         x = self.fc(x)
         return x
+
+
+class Frames(nn.Module):
+    def __init__(self, input_features, output_features, model_complexity=48):
+        super().__init__()
+
+        model_size = model_complexity * 16
+        sequence_model = lambda input_size, output_size: BiLSTM(input_size, output_size // 2)
+
+        self.frame_stack = nn.Sequential(
+            ConvStack(input_features, model_size),
+            nn.Linear(model_size, output_features),
+            nn.Sigmoid()
+        )
+
+    def forward(self, mel):
+        frame_pred = self.frame_stack(mel)
+
+        return frame_pred
+
+    def run_on_batch(self, batch: Dict[str, torch.Tensor]):
+        audio_label: torch.Tensor = batch['audio']
+        onset_label: torch.Tensor = batch['onset']
+        offset_label: torch.Tensor = batch['offset']
+        frame_label: torch.Tensor = batch['frame']
+        velocity_label: torch.Tensor = batch['velocity']
+
+        mel = melspectrogram(audio_label.reshape(-1, audio_label.shape[-1])[:, :-1]).transpose(-1, -2)
+        frame_pred: torch.Tensor = self(mel)
+        """
+        shape=(batch_size, ..., output_features=88
+        """
+
+        predictions = {
+            'frame': frame_pred.reshape(*frame_label.shape),
+        }
+
+        losses = {
+            'loss/frame': F.binary_cross_entropy(predictions['frame'], frame_label),
+        }
+
+        return predictions, losses
 
 
 class OnsetsAndFrames(nn.Module):
