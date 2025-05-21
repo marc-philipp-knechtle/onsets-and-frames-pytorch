@@ -14,6 +14,8 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 from onsets_and_frames import *
+from onsets_and_frames.decoding import extract_notes_from_frames
+from onsets_and_frames.transcriber import Frames
 
 
 def float_samples_to_int16(y):
@@ -61,17 +63,26 @@ def load_and_process_audio(flac_path, sequence_length, device, duration=None) ->
     return audio
 
 
-def transcribe(model: OnsetsAndFrames, audio: Tensor) -> Dict[str, Any]:
+def transcribe(model, audio: Tensor) -> Dict[str, Any]:
     melspect = melspectrogram(audio.reshape(-1, audio.shape[-1])[:, :-1]).transpose(-1, -2)
 
-    onset_pred, offset_pred, _, frame_pred, velocity_pred = model(melspect)
+    if type(model) == OnsetsAndFrames:
+        onset_pred, offset_pred, _, frame_pred, velocity_pred = model(melspect)
 
-    predictions = {
-        'onset': onset_pred.reshape((onset_pred.shape[1], onset_pred.shape[2])),
-        'offset': offset_pred.reshape((offset_pred.shape[1], offset_pred.shape[2])),
-        'frame': frame_pred.reshape((frame_pred.shape[1], frame_pred.shape[2])),
-        'velocity': velocity_pred.reshape((velocity_pred.shape[1], velocity_pred.shape[2]))
-    }
+        predictions = {
+            'onset': onset_pred.reshape((onset_pred.shape[1], onset_pred.shape[2])),
+            'offset': offset_pred.reshape((offset_pred.shape[1], offset_pred.shape[2])),
+            'frame': frame_pred.reshape((frame_pred.shape[1], frame_pred.shape[2])),
+            'velocity': velocity_pred.reshape((velocity_pred.shape[1], velocity_pred.shape[2]))
+        }
+    elif type(model) == Frames:
+        frame_pred = model(melspect)
+
+        predictions = {
+            'frame': frame_pred.reshape((frame_pred.shape[1], frame_pred.shape[2]))
+        }
+    else:
+        raise RuntimeError(f'Unknown model type. Expected OnsetsAndFrames or Frames, got {type(model)}.')
 
     return predictions
 
@@ -81,7 +92,7 @@ def transcribe_file(model_file: str, audio_paths: List[str], save_path: str, seq
                     save_frames: bool = False, save_onsets: bool = False, should_save_pianoroll: bool = False):
     torch.cuda.empty_cache()
 
-    model: OnsetsAndFrames = torch.load(model_file, map_location=device).eval()
+    model = torch.load(model_file, map_location=device).eval()
     if show_summary:
         summary(model)
 
@@ -89,7 +100,7 @@ def transcribe_file(model_file: str, audio_paths: List[str], save_path: str, seq
         print(f'{i + 1}/{len(audio_paths)}: Processing {audio_path}...', file=sys.stderr)
         audio = load_and_process_audio(audio_path, sequence_length, device, duration=None)
         try:
-            predictions: Dict[str, Any] = transcribe(model, audio)
+            prediction: Dict[str, Any] = transcribe(model, audio)
             """
             shape(num_of_frames, piano_keys (88)) 
             onset: Tensor
@@ -104,12 +115,19 @@ def transcribe_file(model_file: str, audio_paths: List[str], save_path: str, seq
             torch.cuda.empty_cache()
             print("Called torch.cuda.empty_cache()")
             audio = load_and_process_audio(audio_path, sequence_length, device, duration=5)
-            predictions: dict = transcribe(model, audio)
+            prediction: dict = transcribe(model, audio)
 
-        p_est, i_est, v_est = extract_notes(predictions['onset'], predictions['frame'], predictions['velocity'],
-                                            onset_threshold, frame_threshold)
-        # Uncomment this if you want to make predictions based on the pure frame output
-        # p_est, i_est, v_est = decoding.extract_notes_from_frames(predictions['frame'], frame_threshold)
+
+        required_keys_oaf = ['onset', 'frame', 'velocity']
+        required_keys_frame_model = ['frame']
+
+        if all(key in prediction for key in required_keys_oaf):
+            p_est, i_est, v_est = extract_notes(prediction['onset'], prediction['frame'], prediction['velocity'],
+                                                onset_threshold, frame_threshold)
+        elif all(key in prediction for key in required_keys_frame_model):
+            p_est, i_est, v_est = extract_notes_from_frames(prediction['frame'], frame_threshold)
+        else:
+            raise RuntimeError(f'Expected keys {required_keys_oaf} or {required_keys_frame_model} in prediction.')
 
         scaling = HOP_LENGTH / SAMPLE_RATE
 
@@ -118,12 +136,12 @@ def transcribe_file(model_file: str, audio_paths: List[str], save_path: str, seq
 
         os.makedirs(save_path, exist_ok=True)
         if save_frames:
-            torch.save(predictions['frame'], os.path.join(save_path, os.path.basename(audio_path) + '_frames.pt'))
+            torch.save(prediction['frame'], os.path.join(save_path, os.path.basename(audio_path) + '_frames.pt'))
         if save_onsets:
-            torch.save(predictions['onset'], os.path.join(save_path, os.path.basename(audio_path) + '_onsets.pt'))
+            torch.save(prediction['onset'], os.path.join(save_path, os.path.basename(audio_path) + '_onsets.pt'))
         pred_path = os.path.join(save_path, os.path.basename(audio_path) + '.pred.png')
         if should_save_pianoroll:
-            save_pianoroll(pred_path, predictions['onset'], predictions['frame'])
+            save_pianoroll(pred_path, prediction['onset'], prediction['frame'])
         midi_path = os.path.join(save_path, os.path.basename(audio_path) + '.pred.mid')
         save_midi(midi_path, p_est, i_est, v_est)
 
