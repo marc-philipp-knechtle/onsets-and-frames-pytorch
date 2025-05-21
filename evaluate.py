@@ -23,6 +23,7 @@ import onsets_and_frames.dataset as dataset_module
 from onsets_and_frames import *
 from onsets_and_frames.dataset import PianoRollAudioDataset, SchubertWinterreiseDataset, SchubertWinterreisePiano, \
     SchubertWinterreiseVoice
+from onsets_and_frames.decoding import extract_notes_from_frames
 from onsets_and_frames.midi import parse_midi, create_midi
 from onsets_and_frames.utils import save_pianoroll_matplotlib
 
@@ -92,8 +93,19 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
         intervals
         velocities
         """
-        p_est, i_est, v_est = extract_notes(prediction['onset'], prediction['frame'], prediction['velocity'],
-                                            onset_threshold, frame_threshold)
+
+
+        required_keys_oaf = ['onset', 'frame', 'velocity']
+        required_keys_frame_model = ['frame']
+
+        if all(key in prediction for key in required_keys_oaf):
+            p_est, i_est, v_est = extract_notes(prediction['onset'], prediction['frame'], prediction['velocity'],
+                                                onset_threshold, frame_threshold)
+        elif all(key in prediction for key in required_keys_frame_model):
+            p_est, i_est, v_est = extract_notes_from_frames(prediction['frame'], frame_threshold)
+        else:
+            raise RuntimeError(f'Expected keys {required_keys_oaf} or {required_keys_frame_model} in prediction.')
+
         t_est, f_est = notes_to_frames(p_est, i_est, prediction['frame'].shape)
 
         scaling = HOP_LENGTH / SAMPLE_RATE
@@ -287,7 +299,7 @@ def evaluate_inference_dir(model_dir: str, piano_roll_audio_dataset_name: str, d
         label_name = label_name.replace('.wav', '')
         matching_midi_filepaths = [csv_file for csv_file in predictions_filepaths if
                                    re.compile(fr".*{re.escape(label_name)}.*").search(csv_file)]
-        if len(matching_midi_filepaths) is not 1:
+        if len(matching_midi_filepaths) != 1:
             raise RuntimeError(
                 f'Found different amount of predictions for label {label_name}. '
                 f'Expected 1, found {len(matching_midi_filepaths)}')
