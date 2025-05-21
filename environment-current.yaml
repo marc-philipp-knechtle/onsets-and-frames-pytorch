@@ -189,6 +189,7 @@ dependencies:
   - pytorch=1.9.0=cpu_py38h91ab35c_0
   - pytz=2024.2=pyhd8ed1ab_0
   - pyu2f=0.1.5=pyhd8ed1ab_0
+  - pyyaml=6.0.2=py38h2019614_0
   - qt-main=5.15.8=hc9dc06e_21
   - readline=8.2=h8c095d6_2
   - requests=2.32.3=pyhd8ed1ab_0
@@ -216,6 +217,7 @@ dependencies:
   - typing_extensions=4.12.2=pyha770c72_0
   - unicodedata2=15.1.0=py38h01eb140_0
   - urllib3=2.2.3=pyhd8ed1ab_0
+  - watchdog=4.0.1=py38h578d9bd_0
   - werkzeug=3.0.6=pyhd8ed1ab_0
   - wheel=0.45.1=pyhd8ed1ab_0
   - wrapt=1.16.0=py38h01eb140_0
@@ -241,6 +243,7 @@ dependencies:
   - xz=5.8.1=hbcc6ac9_1
   - xz-gpl-tools=5.8.1=hbcc6ac9_1
   - xz-tools=5.8.1=hb9d3cd8_1
+  - yaml=0.2.5=h7f98852_2
   - yarl=1.9.4=py38h01eb140_0
   - zipp=3.21.0=pyhd8ed1ab_0
   - zlib=1.2.13=h4ab18f5_6

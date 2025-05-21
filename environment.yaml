@@ -26,3 +26,5 @@ dependencies:
   # older tensorboard versions have a weird caching issue where a different amount of iterations is displayed in each run
   - tensorboard>=2.3.0
   - tqdm>=4.28.1 # copied from original jongwook requirement
+  - watchdog
+
