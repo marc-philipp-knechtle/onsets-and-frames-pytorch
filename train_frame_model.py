@@ -13,20 +13,20 @@ from sacred.observers import FileStorageObserver
 from torch import Tensor
 from torch.nn.utils import clip_grad_norm_
 from torch.optim.lr_scheduler import StepLR
-from torch.utils.data import DataLoader, ConcatDataset, Dataset
+from torch.utils.data import DataLoader, ConcatDataset
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from evaluate import evaluate
 from onsets_and_frames import *
-from onsets_and_frames.dataset import SchubertWinterreiseDataset, SchubertWinterreiseVoice, SchubertWinterreisePiano, \
-    PianoRollAudioDataset
+from onsets_and_frames.dataset import PianoRollAudioDataset
 
 from onsets_and_frames.dataset import dataset_definitions as ddef
 from onsets_and_frames.transcriber import Frames
 from train import create_datasets, create_sampler, EarlyStopping
 
 ex = Experiment('train_frame')
+
 
 @ex.config
 def config():
@@ -86,7 +86,7 @@ def create_model(device, learning_rate, logdir, model_complexity, resume_iterati
             optimizer.load_state_dict(torch.load(os.path.join(logdir, 'last-optimizer-state.pt')))
             logging.info(f"Resuming training at previously automatically determined state: {model_path}")
         else:
-            model = OnsetsAndFrames(N_MELS, MAX_MIDI - MIN_MIDI + 1, model_complexity).to(device)
+            model = Frames(N_MELS, MAX_MIDI - MIN_MIDI + 1, model_complexity).to(device)
             optimizer = torch.optim.Adam(model.parameters(), learning_rate)
             resume_iteration = 0
             logging.info("Creating logdir automatically and beginning training from the start.")
@@ -96,7 +96,8 @@ def create_model(device, learning_rate, logdir, model_complexity, resume_iterati
     return model, optimizer, resume_iteration
 
 
-def run_iteration(batch: Dict[str, Tensor], checkpoint_interval, clip_gradient_norm, i, logdir, model, optimizer, scheduler,
+def run_iteration(batch: Dict[str, Tensor], checkpoint_interval, clip_gradient_norm, i, logdir, model, optimizer,
+                  scheduler,
                   validation_dataset, validation_interval, writer: SummaryWriter, early_stopping: EarlyStopping):
     """
 
@@ -147,7 +148,6 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
                      learning_rate_decay_steps: int, leave_one_out: bool, logdir: str, model_complexity: int,
                      resume_iteration: bool, sequence_length: int, train_on: str, data_path: str,
                      validation_interval: int, validation_length: int, writer: SummaryWriter, clear_computed: bool):
-
     dataset_training: ConcatDataset
     dataset_training, dataset_validation = create_datasets(sequence_length, train_on, data_path)
 
@@ -229,4 +229,3 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
         print(e)
         print(str(e), file=sys.stderr)
         raise e
-
