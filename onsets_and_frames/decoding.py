@@ -57,7 +57,7 @@ def extract_notes_from_frames(frames, threshold):
             if offset == frames.shape[0]: # = we reach the end of the prediction
                 break
 
-        if offset > onset + 2:
+        if offset > onset:
             pitches.append(pitch)
             intervals.append([onset, offset])
             velocities.append(70)
