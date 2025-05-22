@@ -225,13 +225,6 @@ def create_datasets(sequence_length: int, train_on: str, data_path: str) -> Tupl
             ddef['CSD_validation'](),
             ddef['MuN_validation']()
         ])
-    elif train_on == 'all':
-        dataset_training = ConcatDataset(
-            [ddef['maestro_training'](), ddef['winterreise_training'](), ddef['winterreisevoice_training'](),
-             ddef['winterreisepiano_training'](), ddef['maps_training']()])
-        dataset_validation = ConcatDataset(
-            [ddef['maestro_validation'](), ddef['winterreise_validation'](), ddef['winterreisevoice_validation'](),
-             ddef['winterreisepiano_validation'](), ddef['maps_validation']()])
     else:
         raise RuntimeError(
             'Unknown dataset specified for training. Please verify your argument with the possible arguments.')
