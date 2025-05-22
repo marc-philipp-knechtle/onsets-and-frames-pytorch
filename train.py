@@ -159,10 +159,10 @@ def create_datasets(sequence_length: int, train_on: str, data_path: str) -> Tupl
             ddef['CSD_train']()
         ])
         dataset_validation = ConcatDataset([
+            ddef['MuN_validation'](),
             ddef['winterreise_validation'](),
             ddef['b10_validation'](),
             ddef['CSD_validation'](),
-            ddef['MuN_validation']()
         ])
     elif train_on == 'comparing+maestro':
         dataset_training = ConcatDataset([
@@ -178,7 +178,6 @@ def create_datasets(sequence_length: int, train_on: str, data_path: str) -> Tupl
             ddef['winterreise_validation'](),
             ddef['b10_validation'](),
             ddef['CSD_validation'](),
-            ddef['maestro_validation']()
         ])
     elif train_on == 'comparing-mun':
         dataset_training = ConcatDataset([
@@ -205,8 +204,7 @@ def create_datasets(sequence_length: int, train_on: str, data_path: str) -> Tupl
             ddef['MuN_validation'](),
             ddef['winterreise_validation'](),
             ddef['b10_validation'](),
-            ddef['CSD_validation'](),
-            ddef['maestro_validation']()
+            ddef['CSD_validation']()
         ])
     elif train_on == 'tmp-train-maestro-val-comparing':
         dataset_training = ConcatDataset([ddef['maestro_training']()])
