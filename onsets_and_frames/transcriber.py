@@ -15,11 +15,20 @@ from .mel import melspectrogram
 
 class ConvStack(nn.Module):
     def __init__(self, input_features, output_features):
+        """
+        Args:
+            input_features: Number of mel frequencies in this example
+            output_features: model complexity it is multiplied by 16 previously to get model size.
+                I have no idea why this is multiplied and then divided here again???
+        """
         super().__init__()
 
         # input is batch_size * 1 channel * frames * input_features
         self.cnn = nn.Sequential(
             # layer 0
+            # Input Channels:
+            #     These correspond to the depth of the input feature map. For example, if you have an RGB image as input, it has 3 input channels (Red, Green, and Blue).
+            #     The number of input channels is determined by the data itself. For a grayscale image, there is only 1 input channel
             nn.Conv2d(1, output_features // 16, (3, 3), padding=1),
             nn.BatchNorm2d(output_features // 16),
             nn.ReLU(),
@@ -52,6 +61,13 @@ class ConvStack(nn.Module):
 
 class Frames(nn.Module):
     def __init__(self, input_features, output_features, model_complexity=48):
+        """
+
+        Args:
+            input_features: Number of mel frequencies in this example
+            output_features: number of midi options in this example
+            model_complexity: * 16 (output channels, = number of filters)
+        """
         super().__init__()
 
         model_size = model_complexity * 16
