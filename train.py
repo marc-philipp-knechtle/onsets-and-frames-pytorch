@@ -138,10 +138,6 @@ def create_datasets(sequence_length: int, train_on: str, data_path: str) -> Tupl
         winterreisepiano_validation = SchubertWinterreisePiano(groups=['AL98'], sequence_length=sequence_length)
         dataset_training = ConcatDataset([maestro_training, winterreisepiano_training])
         dataset_validation = ConcatDataset([maestro_validation, winterreisepiano_validation])
-    elif train_on == 'WagnerRing':
-        logging.warning('training and validating only on test dataset because rest of dataset is not yet available.')
-        dataset_training = ddef['wrd_test']()
-        dataset_validation = ddef['wrd_test']()
     elif train_on == 'Bach10':
         dataset_training = ddef['b10_train']()
         dataset_validation = ddef['b10_validation']()
