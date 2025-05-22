@@ -38,7 +38,6 @@ default_evaluation_datasets: List[Tuple[str, dataset_module.PianoRollAudioDatase
     ]
 
 
-# todo rename to create_dict
 def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_threshold=0.5,
              frame_threshold=0.5, save_path=None) -> dict:
     metrics = defaultdict(list)
