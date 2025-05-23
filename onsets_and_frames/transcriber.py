@@ -165,7 +165,7 @@ class OnsetsAndFrames(nn.Module):
             'onset': onset_pred.reshape(*onset_label.shape),
             'offset': offset_pred.reshape(*offset_label.shape),
             'frame': frame_pred.reshape(*frame_label.shape),
-            # 'velocity': velocity_pred.reshape(*velocity_label.shape)
+            'velocity': velocity_pred.reshape(*velocity_label.shape)
         }
 
         losses = {
