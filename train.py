@@ -38,6 +38,9 @@ def config():
 
     batch_size = 8
     sequence_length = 327680
+    """
+    This is the length of the input sequence during training. In seconds: ..../SAMPLE_RATE = 20.48s
+    """
     model_complexity = 48
 
     if torch.cuda.is_available() and torch.cuda.get_device_properties(torch.cuda.current_device()).total_memory < 10e9:
