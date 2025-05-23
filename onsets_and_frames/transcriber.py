@@ -165,14 +165,14 @@ class OnsetsAndFrames(nn.Module):
             'onset': onset_pred.reshape(*onset_label.shape),
             'offset': offset_pred.reshape(*offset_label.shape),
             'frame': frame_pred.reshape(*frame_label.shape),
-            'velocity': velocity_pred.reshape(*velocity_label.shape)
+            # 'velocity': velocity_pred.reshape(*velocity_label.shape)
         }
 
         losses = {
             'loss/onset': F.binary_cross_entropy(predictions['onset'], onset_label),
             'loss/offset': F.binary_cross_entropy(predictions['offset'], offset_label),
             'loss/frame': F.binary_cross_entropy(predictions['frame'], frame_label),
-            'loss/velocity': self.velocity_loss(predictions['velocity'], velocity_label, onset_label)
+            # 'loss/velocity': self.velocity_loss(predictions['velocity'], velocity_label, onset_label)
         }
 
         return predictions, losses
