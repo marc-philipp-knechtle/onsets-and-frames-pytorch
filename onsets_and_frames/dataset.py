@@ -89,14 +89,15 @@ class PianoRollAudioDataset(Dataset):
 
         if self.sequence_length is not None:
             audio_length = len(data['audio'])
+            # audio_length_seconds = audio_length / SAMPLE_RATE
             step_begin = self.random.randint(audio_length - self.sequence_length) // HOP_LENGTH
             n_steps = self.sequence_length // HOP_LENGTH
             step_end = step_begin + n_steps
 
-            begin = step_begin * HOP_LENGTH
-            end = begin + self.sequence_length
+            begin_sample = step_begin * HOP_LENGTH
+            end_sample = begin_sample + self.sequence_length
 
-            result['audio'] = data['audio'][begin:end].to(self.device)
+            result['audio'] = data['audio'][begin_sample:end_sample].to(self.device)
             result['label'] = data['label'][step_begin:step_end, :].to(self.device)
             result['velocity'] = data['velocity'][step_begin:step_end, :].to(self.device)
         else:
@@ -107,6 +108,13 @@ class PianoRollAudioDataset(Dataset):
         result['audio'] = result['audio'].float().div_(32768.0)
         result['onset'] = (result['label'] == 3).float()
         result['offset'] = (result['label'] == 1).float()
+        """
+        Calculating the length of one step to get the offset length in ground truth: 
+        see constants.py Onset Length
+        Sample Rate = 16000
+        Hop Length = 16000 * 32 // 1000 = 512
+        Onset Length s = 512 / 16000 = 0.032
+        """
         result['frame'] = (result['label'] > 1).float()
         result['velocity'] = result['velocity'].float().div_(128.0)
 
