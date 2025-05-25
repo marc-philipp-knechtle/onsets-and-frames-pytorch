@@ -14,8 +14,6 @@ dependencies:
   - pip
   - pretty_midi>=0.2.9
   - python>=3.7.16
-  # This upgrade is necessary because the Docker runs with a later pytorch version
-  - pytorch>=1.2.0
   # Commented because of strange issues with tensorboard -> solution was downgrade
   # https://stackoverflow.com/questions/70520120/attributeerror-module-setuptools-distutils-has-no-attribute-version
   # - setuptools=65.6.3=py37h06a4308_0
@@ -27,4 +25,5 @@ dependencies:
   - tensorboard>=2.3.0
   - tqdm>=4.28.1 # copied from original jongwook requirement
   - watchdog
-
+  - pip:
+      - torch==1.9.1
