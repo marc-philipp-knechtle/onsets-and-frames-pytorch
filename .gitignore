@@ -5,6 +5,7 @@ output
 input
 
 cluster-resemble-enhance
+cluster-training-2
 cluster-training-3
 
 # pretrained model from the greenbech pull request
