@@ -27,6 +27,13 @@ from onsets_and_frames.decoding import extract_notes_from_frames
 from onsets_and_frames.midi import parse_midi, create_midi
 from onsets_and_frames.utils import save_pianoroll_matplotlib
 
+from typing import List, Tuple
+
+import scipy.integrate as sc_integrate
+from sklearn.metrics import auc
+
+import matplotlib.pyplot as plt
+
 eps = sys.float_info.epsilon
 
 default_evaluation_datasets: List[Tuple[str, dataset_module.PianoRollAudioDataset]] = \
@@ -92,7 +99,6 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
         intervals
         velocities
         """
-
 
         required_keys_oaf = ['onset', 'frame', 'velocity']
         required_keys_frame_model = ['frame']
@@ -175,6 +181,92 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
     return metrics
 
 
+def evaluate_ap(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames) -> List[float]:
+    """
+
+    Args:
+        pianoroll_dataset:
+        model:
+
+    Returns:
+
+    """
+    prediction: Dict[Tensor, Tensor, Tensor, Tensor]
+    average_precisions: List[float] = []
+    for label in tqdm(pianoroll_dataset):
+        prediction, losses = model.run_on_batch(label)
+
+        for key, value in prediction.items():
+            # apply relu = sets all negative values to 0
+            # .squeeze(0) = remove the first dimension if it's size one
+            # I'm not entirely sure why the .squeeze(0) function is necessary, however it does not do any harm!
+            value.squeeze_(0).relu_()
+
+        # list of np.ndarray, each containing the frequency bin indices
+        f_ref: List[np.ndarray]
+        p_ref, i_ref, v_ref = extract_notes(label['onset'], label['frame'], label['velocity'])
+        t_ref, f_ref = notes_to_frames(p_ref, i_ref, label['frame'].shape)
+
+        scaling = HOP_LENGTH / SAMPLE_RATE
+
+        t_ref = t_ref.astype(np.float64) * scaling
+        f_ref = [np.array([midi_to_hz(MIN_MIDI + midi_val) for midi_val in freqs]) for freqs in f_ref]
+
+        precision_recall_pairs_frame: List[Tuple[float, float]] = []
+
+        for threshold in np.arange(0, 1.0, 0.05):
+            p_est, i_est, v_est = extract_notes(prediction['onset'], prediction['frame'], prediction['velocity'],
+                                                threshold, threshold)
+            t_est, f_est = notes_to_frames(p_est, i_est, prediction['frame'].shape)
+            t_est = t_est.astype(np.float64) * scaling
+            f_est = [np.array([midi_to_hz(MIN_MIDI + midi_val) for midi_val in freqs]) for freqs in f_est]
+
+            frame_metrics = evaluate_frames(t_ref, f_ref, t_est, f_est)
+
+            precision_recall_pairs_frame.append((frame_metrics['Precision'], frame_metrics['Recall']))
+
+        ap = calc_ap_from_prec_recall_pairs(precision_recall_pairs_frame, plot=False,
+                                            thresholds=np.arange(0, 1.0, 0.05).tolist(), title=f"{label['path']}")
+        average_precisions.append(ap)
+
+    return average_precisions
+
+
+def calc_ap_from_prec_recall_pairs(precision_recall_pairs: List[Tuple[float, float]], plot: bool,
+                                   thresholds, title: str) -> float:
+    """
+    Calculate AP with sklearn.metrics.auc (Area Under Curve)
+    This is an alternative method to sklearn.metrics.average_precision_score
+    We cannot use said method in some cases because we rely on multiple thresholds (e.g. onset thresh and frame thresh)
+    Args:
+        precision_recall_pairs: List of Tuples with (precision, recall) values.
+        plot: ...
+        thresholds: ...
+        title: ...
+    Returns: Average Precision score, calculated with sklearn
+    """
+    precision_recall_pairs_sorted_precision = sorted(precision_recall_pairs, key=lambda pair: pair[0])
+    precision, recall = zip(*precision_recall_pairs_sorted_precision)
+    ap = auc(precision, recall)
+    if plot:
+        plot_rec_rec_curve(precision, recall, thresholds, title)
+    assert ap >= 0
+    return ap
+
+
+def plot_rec_rec_curve(precision: List[float], recall: List[float], thresholds: List[float] = None, title: str = None):
+    fig, ax = plt.subplots(figsize=(15, 15))
+    ax.plot(recall, precision)
+    if thresholds is not None:
+        thresholds = tuple(thresholds)
+        for x, y, thr in zip(recall, precision, thresholds):
+            ax.annotate(f"({thr:.2f})", (x, y), textcoords="offset points", xytext=(5, 5), ha='center')
+    ax.set_xlabel('Recall')
+    ax.set_ylabel('Precision')
+    ax.set_title(title if title is not None else 'Precision-Recall Curve')
+    plt.show()
+
+
 def compute_avg_precision(piano_roll_audio_dataset: PianoRollAudioDataset, model: OnsetsAndFrames) -> Tuple[
     List[float], List[float]]:
     """
@@ -221,7 +313,7 @@ def compute_avg_precision(piano_roll_audio_dataset: PianoRollAudioDataset, model
             precision_recall_pairs_frame.append((recall, precision))
 
             p_onset, r_onset, f, o = evaluate_notes(i_ref_scaled_reshaped, p_ref_hz, i_est_scaled_reshaped, p_est_hz,
-                                              offset_ratio=None)
+                                                    offset_ratio=None)
             precision_recall_pairs_onset.append((p_onset, r_onset))
 
         precision_recall_pairs_frame = sorted(precision_recall_pairs_frame)
