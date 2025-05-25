@@ -36,7 +36,7 @@ def config():
     train_on = 'MAESTRO'
     data_path = 'data/MAESTRO'
 
-    batch_size = 2
+    batch_size = 8
     sequence_length = 327680
     """
     This is the length of the input sequence during training. In seconds: ..../SAMPLE_RATE = 20.48s
@@ -61,7 +61,7 @@ def config():
     clip_gradient_norm = 3
 
     validation_length = sequence_length
-    validation_interval = 2
+    validation_interval = 500
 
     clear_computed: bool = False
 
