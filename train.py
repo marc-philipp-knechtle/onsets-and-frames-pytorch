@@ -16,7 +16,7 @@ from torch.utils.data import DataLoader, ConcatDataset, Dataset
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from evaluate import evaluate
+from evaluate import evaluate, evaluate_ap
 from onsets_and_frames import *
 from onsets_and_frames.dataset import SchubertWinterreiseDataset, SchubertWinterreiseVoice, SchubertWinterreisePiano, \
     PianoRollAudioDataset
@@ -36,7 +36,7 @@ def config():
     train_on = 'MAESTRO'
     data_path = 'data/MAESTRO'
 
-    batch_size = 8
+    batch_size = 2
     sequence_length = 327680
     """
     This is the length of the input sequence during training. In seconds: ..../SAMPLE_RATE = 20.48s
@@ -61,7 +61,7 @@ def config():
     clip_gradient_norm = 3
 
     validation_length = sequence_length
-    validation_interval = 500
+    validation_interval = 2
 
     clear_computed: bool = False
 
@@ -378,9 +378,11 @@ def run_iteration(batch: Dict, checkpoint_interval, clip_gradient_norm, i, logdi
         model.eval()
         with torch.no_grad():
             eval_dct = evaluate(validation_dataset, model)
+            aps = evaluate_ap(validation_dataset, model)
             for key, value in eval_dct.items():
                 writer.add_scalar('validation/' + key.replace(' ', '_'), np.mean(value), global_step=i)
-            early_stopping(np.mean(eval_dct['metric/frame/f1']), model)
+            writer.add_scalar('validation/average_precision', np.mean(aps), global_step=i)
+            early_stopping(np.mean(aps), model)
         model.train()
     if i % checkpoint_interval == 0:
         logging.info(f'saving mode model-{i}.pt')
