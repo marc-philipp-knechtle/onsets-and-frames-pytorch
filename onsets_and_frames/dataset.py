@@ -13,11 +13,13 @@ import librosa
 import numpy as np
 import pandas as pd
 import soundfile
+import torch
 from torch import Tensor
 
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
+import transcribe
 from . import midi
 from .constants import *
 from .midi import parse_midi
@@ -177,8 +179,12 @@ class PianoRollAudioDataset(Dataset):
             except EOFError:
                 print(f'File {saved_data_path} is corrupted. Please inspect manually, or delete.')
 
+        """
+        Previous audio loading code. This did not work because of several issues: 
+            * The default handling with audio, sr = soundfile.read(audio_path, dtype='int16') did not work with MuN
+            * Changing this to float32 dtype worked for loading the audio file, but did not produce correct inference  
         audio: np.ndarray
-        audio, sr = soundfile.read(audio_path, dtype='int16')
+        audio, sr = soundfile.read(audio_path, dtype='float32') # Previously: dtype='int16' (did no work bc of MuN)
         # Conversion to fload see:
         # https://stackoverflow.com/questions/58810035/converting-audio-files-between-pydub-and-librosa
         audio: np.ndarray = np.array(audio).astype(np.float32)
@@ -208,6 +214,15 @@ class PianoRollAudioDataset(Dataset):
             #     audio = audio.T
 
             audio = librosa.resample(audio, sr, SAMPLE_RATE)
+        audio_
+        """
+
+        # librosa is a wrapper for soundfile
+        audio, sr = librosa.load(audio_path, sr=SAMPLE_RATE, mono=True)
+        audio = transcribe.float_samples_to_int16(audio)
+
+        assert sr == SAMPLE_RATE
+        assert audio.dtype == 'int16'
 
         audio_tensor = torch.ShortTensor(audio)
         audio_length = len(audio_tensor)
