@@ -23,7 +23,8 @@ spec:
               cpu: "8"
               memory: "32Gi"
             requests: *resources # sets requests = limits
-          command: ["python3", "onsets-and-frames-pytorch/train_frame_model.py", "with", "train_on=comparing", "logdir=runs/05-18-frame-model-comparing", "checkpoint_interval=10000"]
+#           command: ["python3", "onsets-and-frames-pytorch/train_frame_model.py", "with", "train_on=comparing", "logdir=runs/05-18-frame-model-comparing", "checkpoint_interval=10000"]
+          command: ["python3", "onsets-and-frames-pytorch/train.py", "with", "train_on=comparing", "logdir=runs/05-25-comparing", "checkpoint_interval=10000"]
           # This command was used for debugging of the pods (infinite sleeping)
           # command: ["/bin/bash", "-c", "--"]
           # args: [ "while true; do sleep 30; done;" ]

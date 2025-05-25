@@ -24,7 +24,8 @@ spec:
               memory: "64Gi"
             requests: *resources # sets requests = limits
 #           command: ["python3", "onsets-and-frames-pytorch/train.py", "with", "train_on=all", "logdir=runs/02-14-comparing-run", "checkpoint_interval=10000"]
-          command: ["python3", "onsets-and-frames-pytorch/train_frame_model.py", "with", "train_on=MAESTRO", "logdir=runs/05-17-frame-model-maestro", "checkpoint_interval=10000"]
+#           command: ["python3", "onsets-and-frames-pytorch/train_frame_model.py", "with", "train_on=comparing+maestro", "logdir=runs/05-12-frame-model-comparing+maestro", "checkpoint_interval=10000"]
+          command: ["python3", "onsets-and-frames-pytorch/train.py", "with", "train_on=MAESTRO", "logdir=runs/05-25-maestro", "checkpoint_interval=10000"]
           # This command was used for debugging of the pods (infinite sleeping)
           # command: ["/bin/bash", "-c", "--"]
           # args: [ "while true; do sleep 30; done;" ]
