@@ -110,6 +110,13 @@ class Frames(nn.Module):
 
 class OnsetsAndFrames(nn.Module):
     def __init__(self, input_features, output_features, model_complexity=48):
+        """
+
+        Args:
+            input_features:
+            output_features: here, our output piano keys -> we want an output probability for each key
+            model_complexity:
+        """
         super().__init__()
 
         model_size = model_complexity * 16
