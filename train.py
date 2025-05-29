@@ -22,6 +22,7 @@ from onsets_and_frames.dataset import SchubertWinterreiseDataset, SchubertWinter
     PianoRollAudioDataset
 
 from onsets_and_frames.dataset import dataset_definitions as ddef
+from onsets_and_frames.earlystopping import EarlyStopping
 
 ex = Experiment('train_transcriber')
 
@@ -56,8 +57,6 @@ def config():
     learning_rate_decay_steps = 10000
     learning_rate_decay_rate = 0.98
 
-    leave_one_out = None
-
     clip_gradient_norm = 3
 
     validation_length = sequence_length
@@ -66,28 +65,6 @@ def config():
     clear_computed: bool = False
 
     ex.observers.append(FileStorageObserver.create(logdir))
-
-
-class EarlyStopping:
-    def __init__(self, patience=50):
-        self.patience = patience
-        self.best_score = None
-        self.counter = 0
-        self.early_stop = False
-        self.best_model_state = None
-
-    def __call__(self, score, model):
-        if self.best_score is None:
-            self.best_score = score
-            self.best_model_state = model
-        elif score < self.best_score:
-            self.counter += 1
-            if self.counter >= self.patience:
-                self.early_stop = True
-        else:
-            self.best_score = score
-            self.best_model_state = model
-            self.counter = 0
 
 
 def create_datasets(sequence_length: int, train_on: str, data_path: str) -> Tuple[Dataset, Dataset]:
@@ -230,25 +207,13 @@ def create_datasets(sequence_length: int, train_on: str, data_path: str) -> Tupl
 
 def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_norm: int,
                      device: str, iterations: int, learning_rate: float, learning_rate_decay_rate: float,
-                     learning_rate_decay_steps: int, leave_one_out: bool, logdir: str, model_complexity: int,
+                     learning_rate_decay_steps: int, logdir: str, model_complexity: int,
                      resume_iteration: bool, sequence_length: int, train_on: str, data_path: str,
                      validation_interval: int, validation_length: int, writer: SummaryWriter, clear_computed: bool):
-    train_groups, validation_groups = ['train'], ['validation']
-    if leave_one_out is not None:
-        all_years = {'2004', '2006', '2008', '2009', '2011', '2013', '2014', '2015', '2017'}
-        train_groups = list(all_years - {str(leave_one_out)})
-        validation_groups = [str(leave_one_out)]
-
     dataset_training: ConcatDataset
     dataset_training, dataset_validation = create_datasets(sequence_length, train_on, data_path)
 
-    if type(dataset_training) == ConcatDataset:
-        sampler = create_sampler(dataset_training)
-        loader = DataLoader(dataset_training, batch_size, drop_last=True, sampler=sampler)
-    elif isinstance(dataset_training, PianoRollAudioDataset):
-        loader = DataLoader(dataset_training, batch_size, drop_last=True, shuffle=True)
-    else:
-        raise RuntimeError(f'Unknown type of dataset: {str(dataset_training)}')
+    loader = create_classic_loader(dataset_training, batch_size)
 
     model, optimizer, resume_iteration = create_model(device, learning_rate, logdir, model_complexity, resume_iteration)
     summary(model)
@@ -268,6 +233,15 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
         frame
         """
         for i, batch in zip(loop, cycle(loader)):
+            """
+            zip(loop, cycle(loader)) -> pairs values from loop with the loader()
+            cyle(loader) -> infinite loop over the loader, starts from beginning if the loader is exhausted
+            
+            We need this mechanism to create the batches on the fly, because otherwise this would not fit into gpu memory.
+            Test this by: 
+            asdf = list(zip(loop, cycle(loader)))
+            -> memory error... 
+            """
             run_iteration(batch, checkpoint_interval, clip_gradient_norm, i, logdir, model, optimizer, scheduler,
                           dataset_validation, validation_interval, writer, early_stopping)
             if early_stopping.early_stop:
@@ -298,6 +272,19 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
             else:
                 raise RuntimeError(
                     f'Expected Concat Dataset or PianoRollAudioDataset but got something else: {type(dataset_validation)}')
+
+
+def create_classic_loader(dataset_training, batch_size):
+    if type(dataset_training) == ConcatDataset:
+        sampler = create_sampler(dataset_training)
+        loader = DataLoader(dataset_training, batch_size, drop_last=True, sampler=sampler)
+    elif isinstance(dataset_training, PianoRollAudioDataset):
+        # shuffle=True -> RandomSampler is used
+        loader = DataLoader(dataset_training, batch_size, drop_last=True, shuffle=True)
+    else:
+        raise RuntimeError(f'Unknown type of dataset: {str(dataset_training)}')
+
+    return loader
 
 
 def create_sampler(dataset_training: ConcatDataset) -> torch.utils.data.WeightedRandomSampler:
@@ -393,7 +380,7 @@ def run_iteration(batch: Dict, checkpoint_interval, clip_gradient_norm, i, logdi
 @ex.automain
 def train(logdir, device, iterations, resume_iteration, checkpoint_interval, train_on, data_path, batch_size,
           sequence_length, model_complexity, learning_rate, learning_rate_decay_steps, learning_rate_decay_rate,
-          leave_one_out, clip_gradient_norm, validation_length, validation_interval, clear_computed):
+          clip_gradient_norm, validation_length, validation_interval, clear_computed):
     print_config(ex.current_run)
 
     os.makedirs(logdir, exist_ok=True)
@@ -401,7 +388,7 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
 
     try:
         training_process(batch_size, checkpoint_interval, clip_gradient_norm, device, iterations, learning_rate,
-                         learning_rate_decay_rate, learning_rate_decay_steps, leave_one_out, logdir, model_complexity,
+                         learning_rate_decay_rate, learning_rate_decay_steps, logdir, model_complexity,
                          resume_iteration, sequence_length, train_on, data_path, validation_interval, validation_length,
                          writer, clear_computed)
     except Exception as e:
