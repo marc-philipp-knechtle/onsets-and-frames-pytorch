@@ -27,6 +27,7 @@ from .midi import parse_midi
 dataset_definitions = {
     'maestro_training': lambda: MAESTRO(groups=['train'], sequence_length=DEFAULT_SEQUENCE_LENGTH),
     'maestro_validation': lambda: MAESTRO(groups=['validation'], sequence_length=DEFAULT_SEQUENCE_LENGTH),
+
     'winterreise_training': lambda: SchubertWinterreiseDataset(groups=['FI66', 'FI80', 'OL06', 'QU98', 'TR99'],
                                                                sequence_length=DEFAULT_SEQUENCE_LENGTH,
                                                                neither_split='train'),
@@ -43,18 +44,24 @@ dataset_definitions = {
         sequence_length=DEFAULT_SEQUENCE_LENGTH),
     'winterreisepiano_validation': lambda: SchubertWinterreisePiano(groups=['AL98'],
                                                                     sequence_length=DEFAULT_SEQUENCE_LENGTH),
+
     'maps_training': lambda: MAPS(
         groups=['AkPnBcht', 'AkPnBsdf', 'AkPnCGdD', 'AkPnStgb', 'SptkBGAm', 'SptkBGCl', 'StbgTGd2'],
         sequence_length=DEFAULT_SEQUENCE_LENGTH),
     'maps_validation': lambda: MAPS(groups=['ENSTDkAm', 'ENSTDkCl'], sequence_length=DEFAULT_SEQUENCE_LENGTH),
+
     # Furtwangler1953,KeilberthFurtw1952,Krauss1953
     'wrd_test': lambda: WagnerRingDataset(groups=['Furtwangler1953', 'KeilberthFurtw1952', 'Krauss1953'],
                                           sequence_length=DEFAULT_SEQUENCE_LENGTH),
+
     'b10_train': lambda: Bach10Dataset(groups=['01', '02', '03', '04']),
     'b10_validation': lambda: Bach10Dataset(groups=['05', '06']),
+
     'PhA_train': lambda: PhenicxAnechoicDataset(groups=['beethoven', 'mahler']),
+
     'CSD_train': lambda: ChoralSingingDataset(groups=['Traditional_ElRossinyol']),
     'CSD_validation': lambda: ChoralSingingDataset(groups=['Guerrero_NinoDios']),
+
     'MuN_train': lambda: MusicNetDataset(groups=['MuN-10-var-train']),
     'MuN_validation': lambda: MusicNetDataset(groups=['MuN-validation']),
     'MuN_test': lambda: MusicNetDataset(groups=['MuN-10-var-test'])
