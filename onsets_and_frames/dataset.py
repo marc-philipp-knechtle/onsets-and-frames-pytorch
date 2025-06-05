@@ -227,6 +227,14 @@ class PianoRollAudioDataset(Dataset):
         sr: int
         # librosa is a wrapper for soundfile
         audio, sr = librosa.load(audio_path, sr=SAMPLE_RATE, mono=True)
+
+        # audio normalization
+        # see https://stackoverflow.com/questions/66066364/audio-volume-normalize-python
+        max_peak = np.max(np.abs(audio))
+        logging.info(f'max peak: {max_peak}')
+        ratio = 1/max_peak
+        audio = audio * ratio
+
         audio = transcribe.float_samples_to_int16(audio)
 
         assert sr == SAMPLE_RATE
