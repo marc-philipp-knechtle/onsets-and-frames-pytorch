@@ -253,25 +253,28 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
         raise e
     finally:
         if clear_computed:
-            if isinstance(dataset_training, ConcatDataset):
-                dataset_impl: PianoRollAudioDataset
-                for dataset_impl in dataset_training.datasets:
-                    dataset_impl.clear_computed()
-            elif isinstance(dataset_training, PianoRollAudioDataset):
-                dataset_training.clear_computed()
-            else:
-                raise RuntimeError(
-                    f'Expected Concat Dataset or PianoRollAudioDataset but got something else: {type(dataset_training)}')
+            clear_train_val_ds(dataset_training, dataset_validation)
 
-            if isinstance(dataset_validation, ConcatDataset):
-                dataset_impl: PianoRollAudioDataset
-                for dataset_impl in dataset_validation.datasets:
-                    dataset_impl.clear_computed()
-            elif isinstance(dataset_validation, PianoRollAudioDataset):
-                dataset_validation.clear_computed()
-            else:
-                raise RuntimeError(
-                    f'Expected Concat Dataset or PianoRollAudioDataset but got something else: {type(dataset_validation)}')
+
+def clear_train_val_ds(dataset_training, dataset_validation):
+    if isinstance(dataset_training, ConcatDataset):
+        dataset_impl: PianoRollAudioDataset
+        for dataset_impl in dataset_training.datasets:
+            dataset_impl.clear_computed()
+    elif isinstance(dataset_training, PianoRollAudioDataset):
+        dataset_training.clear_computed()
+    else:
+        raise RuntimeError(
+            f'Expected Concat Dataset or PianoRollAudioDataset but got something else: {type(dataset_training)}')
+    if isinstance(dataset_validation, ConcatDataset):
+        dataset_impl: PianoRollAudioDataset
+        for dataset_impl in dataset_validation.datasets:
+            dataset_impl.clear_computed()
+    elif isinstance(dataset_validation, PianoRollAudioDataset):
+        dataset_validation.clear_computed()
+    else:
+        raise RuntimeError(
+            f'Expected Concat Dataset or PianoRollAudioDataset but got something else: {type(dataset_validation)}')
 
 
 def create_classic_loader(dataset_training, batch_size):
