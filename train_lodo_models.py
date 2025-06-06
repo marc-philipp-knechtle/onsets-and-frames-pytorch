@@ -27,6 +27,8 @@ from onsets_and_frames.dataset import dataset_definitions as ddef
 from onsets_and_frames.earlystopping import EarlyStopping
 from train import create_model, run_iteration
 
+import train
+
 ex = Experiment('train_transcriber')
 
 training_configs = {
@@ -151,26 +153,7 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
         raise e
     finally:
         if clear_computed:
-            if isinstance(dataset_training, ConcatDataset):
-                dataset_impl: PianoRollAudioDataset
-                for dataset_impl in dataset_training.datasets:
-                    dataset_impl.clear_computed()
-            elif isinstance(dataset_training, PianoRollAudioDataset):
-                dataset_training.clear_computed()
-            else:
-                raise RuntimeError(
-                    f'Expected Concat Dataset or PianoRollAudioDataset but got something else: {type(dataset_training)}')
-
-            if isinstance(dataset_validation, ConcatDataset):
-                dataset_impl: PianoRollAudioDataset
-                for dataset_impl in dataset_validation.datasets:
-                    dataset_impl.clear_computed()
-            elif isinstance(dataset_validation, PianoRollAudioDataset):
-                dataset_validation.clear_computed()
-            else:
-                raise RuntimeError(
-                    f'Expected Concat Dataset or PianoRollAudioDataset but got something else: {type(dataset_validation)}')
-
+            train.clear_train_val_ds(dataset_training, dataset_validation)
 
 @ex.automain
 def train(logdir, device, iterations, resume_iteration, checkpoint_interval, train_on, data_path, batch_size,
