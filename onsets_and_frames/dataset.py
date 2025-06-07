@@ -713,6 +713,9 @@ class Bach10Dataset(PianoRollAudioDataset):
 
         super().__init__(path, groups)
 
+    def __str__(self):
+        return 'Bach10'
+
     @classmethod
     def available_groups(cls):
         return ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10']
@@ -749,6 +752,9 @@ class PhenicxAnechoicDataset(PianoRollAudioDataset):
         self.phenicx_anechoic_tsv = os.path.join(path, '_ann_audio_note_tsv')
 
         super().__init__(path, groups)
+
+    def __str__(self):
+        return 'PhenicxAnechoic'
 
     @classmethod
     def available_groups(cls):
@@ -804,7 +810,7 @@ class RwcDataset(PianoRollAudioDataset):
         super().__init__(path, groups)
 
     def __str__(self):
-        return 'RwcDataset'
+        return 'Rwc'
 
     @classmethod
     def available_groups(cls):
@@ -855,6 +861,9 @@ class ChoralSingingDataset(PianoRollAudioDataset):
         self.csd_midi_mixed = os.path.join(path, '_ann_audio_note_midi')
         self.csd_tsv = os.path.join(path, '_ann_audio_note_tsv')
         super().__init__(path, groups)
+
+    def __str__(self):
+        return 'ChoralSingingDataset'
 
     @classmethod
     def available_groups(cls):
@@ -964,6 +973,9 @@ class MusicNetDataset(PianoRollAudioDataset):
         self.mun_tsv = os.path.join(path, '_ann_audio_note_tsv')
 
         super().__init__(path, groups)
+
+    def __str__(self):
+        return 'MusicNet'
 
     def save_mun_csv_as_midi(self, csv_file, midi_path) -> str:
         if not os.path.exists(midi_path):
