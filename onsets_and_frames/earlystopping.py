@@ -1,5 +1,5 @@
 class EarlyStopping:
-    def __init__(self, patience=50):
+    def __init__(self, patience=10):
         self.patience = patience
         self.best_score = None
         self.counter = 0
