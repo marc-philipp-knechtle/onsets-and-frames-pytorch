@@ -7,6 +7,9 @@ class EarlyStopping:
         self.best_model_state = None
 
     def __call__(self, score, model):
+        print(f'Early stopping patience (counter needs to reach patience): {self.counter}')
+        print(f'Current score: {score}')
+        print(f'Best score: {self.best_score}')
         if self.best_score is None:
             self.best_score = score
             self.best_model_state = model
