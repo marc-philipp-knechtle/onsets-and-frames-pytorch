@@ -64,7 +64,12 @@ dataset_definitions = {
 
     'MuN_train': lambda: MusicNetDataset(groups=['MuN-10-var-train']),
     'MuN_validation': lambda: MusicNetDataset(groups=['MuN-validation']),
-    'MuN_test': lambda: MusicNetDataset(groups=['MuN-10-var-test'])
+    'MuN_test': lambda: MusicNetDataset(groups=['MuN-10-var-test']),
+    'MuN_non-piano_train': lambda: MusicNetDataset(groups=['MuN-non-piano-tr']),
+    'MuN_non-piano_validation': lambda: MusicNetDataset(groups=['MuN-non-piano-val']),
+
+    'RWC_non-piano_train': lambda: RwcDataset(groups=['non-piano-train']),
+    'RWC_non-piano_validation': lambda: RwcDataset(groups=['non-piano-validation'])
 }
 
 
@@ -230,9 +235,9 @@ class PianoRollAudioDataset(Dataset):
 
         # audio normalization
         # see https://stackoverflow.com/questions/66066364/audio-volume-normalize-python
-        max_peak = np.max(np.abs(audio))
-        ratio = 1/max_peak
-        audio = audio * ratio
+        # max_peak = np.max(np.abs(audio))
+        # ratio = 1 / max_peak
+        # audio = audio * ratio
 
         audio = transcribe.float_samples_to_int16(audio)
 
@@ -780,13 +785,54 @@ class PhenicxAnechoicDataset(PianoRollAudioDataset):
 
 
 class RwcDataset(PianoRollAudioDataset):
-    # RWC is exclusively used for testing in the 'comparing' paper -> not using here for training
+    rwc_wav: str
+    rwc_midi_warped: str
+    rwc_tsv: str
+
+    non_piano_ids: List[str] = ['001', '002', '003', '004', '005', '007', '008', '009', '010', '011', '012', '013',
+                                '014', '015', '016', '017', '024', '025', '036', '038', '041']
+    non_piano_train_ids: List[str] = ['001', '002', '003', '004', '005', '007', '008', '009', '010', '011', '012',
+                                      '013', '014', '024', '025']
+    non_piano_validation_ids: List[str] = ['041', '038', '036']
+    non_piano_test_ids: List[str] = ['015', '016', '017']
+
+    def __init__(self, path='data/RWC', groups=None):
+        self.rwc_wav = os.path.join(path, 'wav_22050_mono')
+        self.rwc_midi_warped = os.path.join(path, 'MIDI_warped')
+        self.rwc_tsv = os.path.join(path, '_ann_audio_note_tsv')
+
+        super().__init__(path, groups)
+
+    def __str__(self):
+        return 'RwcDataset'
+
     @classmethod
     def available_groups(cls):
-        pass
+        return ['rwc', 'non-piano', 'non-piano-train', 'non-piano-validation', 'non-piano-test']
 
     def files(self, group):
-        pass
+        logging.info(f'Loading files for group {group}, searching in {self.rwc_wav}')
+        audio_filepaths: List[str] = glob(os.path.join(self.rwc_wav, '*.wav'), recursive=False)
+        midi_filepaths: List[str] = glob(os.path.join(self.rwc_midi_warped, '*.mid'), recursive=False)
+
+        if len(audio_filepaths) == 0 or len(midi_filepaths) == 0:
+            raise RuntimeError(f'Expected files for group {group}, found nothing.')
+
+        if 'non-piano-train' in group:
+            audio_filepaths = [f for f in audio_filepaths if any(id_ in f for id_ in self.non_piano_train_ids)]
+            midi_filepaths = [f for f in midi_filepaths if any(id_ in f for id_ in self.non_piano_train_ids)]
+        elif 'non-piano-validation' in group:
+            audio_filepaths = [f for f in audio_filepaths if any(id_ in f for id_ in self.non_piano_validation_ids)]
+            midi_filepaths = [f for f in midi_filepaths if any(id_ in f for id_ in self.non_piano_validation_ids)]
+        elif 'non-piano-test' in group:
+            audio_filepaths = [f for f in audio_filepaths if any(id_ in f for id_ in self.non_piano_test_ids)]
+            midi_filepaths = [f for f in midi_filepaths if any(id_ in f for id_ in self.non_piano_test_ids)]
+
+        # combine .wav with .mid
+        filepaths_audio_midi: List[Tuple[str, str]] = WagnerRingDataset._combine_audio_midi(audio_filepaths,
+                                                                                            midi_filepaths)
+        audio_tsv_filepaths = SchubertWinterreiseVoice.create_audio_tsv_1(filepaths_audio_midi, self.rwc_tsv)
+        return audio_tsv_filepaths
 
 
 class TriosDataset(PianoRollAudioDataset):
@@ -899,6 +945,19 @@ class MusicNetDataset(PianoRollAudioDataset):
                             '2104', '2105', '2106']
     }
 
+    non_piano_files = ['2219', '2288', '2294', '2241', '2186', '2296', '2204', '2203', '2191', '2289', '2217', '2298',
+                       '2220', '2295', '2297', '2659', '2244', '2222', '2242', '2218', '2202', '2293', '2221', '2243',
+                       '2156', '2131', '2117', '2140', '2154', '2147', '2155', '2119', '2127', '2116', '2138', '2118',
+                       '2157', '2105', '2106', '2104', '2179', '2177', '2180', '2178', '2376', '2483', '2415', '2433',
+                       '2560', '2504', '2497', '2507', '2506', '2562', '2377', '2494', '2481', '2314', '2432', '2403',
+                       '2383', '2313', '2315', '2417', '2365', '2480', '2431', '2368', '2482', '2381', '2382', '2379',
+                       '2505', '2622', '2621', '2384', '2366', '2451', '2416', '1918', '1922', '1919', '1933', '1931',
+                       '1932', '1916', '1923', '1742', '2081', '2079', '2078', '2075', '2080', '2083', '2077', '2082',
+                       '2076', '1790', '1788', '1812', '1805', '1807', '1859', '1789', '1824', '1793', '1819', '1811',
+                       '1835', '1792', '1822', '1791', '1818', '1813', '1817']
+    non_piano_validation_files = list(set(non_piano_files) & set(validation_set_files))
+    non_piano_train_files = list(set(non_piano_files) - set(non_piano_validation_files))
+
     def __init__(self, path='data/MusicNet', groups=None):
         self.mun_audio = os.path.join(path, 'musicnet')
         self.mun_generated_midi_annotations = os.path.join(path, '_musicnet_generated_midi')
@@ -935,7 +994,8 @@ class MusicNetDataset(PianoRollAudioDataset):
     def available_groups(cls):
         return ['MuN-3-train', 'MuN-3-test', 'MuN-10-train', 'MuN-10-test', 'MuN-10-var-train', 'MuN-10-var-test',
                 'MuN-10-slow-train', 'MuN-10-slow-test', 'MuN-10-fast-train', 'MuN-10-fast-test',
-                'MuN-36-cyc-train', 'MuN-36-cyc-test', 'MuN-validation']
+                'MuN-36-cyc-train', 'MuN-36-cyc-test', 'MuN-validation',
+                'MuN-non-piano-tr', 'MuN-non-piano-val']
 
     def files(self, group):
         logging.info(f'Loading files for group {group}, searching in {self.mun_audio}')
@@ -957,6 +1017,14 @@ class MusicNetDataset(PianoRollAudioDataset):
         elif 'validation' in group:
             for filepath in all_audio_filepaths:
                 if any(validation_label in filepath for validation_label in self.validation_set_files):
+                    audio_filepaths_filtered.append(filepath)
+        elif 'non-piano-tr' in group:
+            for filepath in all_audio_filepaths:
+                if any(train_label in filepath for train_label in self.non_piano_train_files):
+                    audio_filepaths_filtered.append(filepath)
+        elif 'non-piano-val' in group:
+            for filepath in all_audio_filepaths:
+                if any(val_label in filepath for val_label in self.non_piano_validation_files):
                     audio_filepaths_filtered.append(filepath)
         else:
             raise ValueError(f'Specified unknown group for this dataset. Specified: {group}')
