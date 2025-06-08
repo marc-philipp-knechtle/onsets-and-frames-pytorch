@@ -13,6 +13,7 @@ cluster-training-5
 cluster-transcription-2
 cluster-transcription-3
 cluster-transcription-4
+cluster-transcription-5
 
 # pretrained model from the greenbech pull request
 pretrained/model-greenbech-500000.pt
