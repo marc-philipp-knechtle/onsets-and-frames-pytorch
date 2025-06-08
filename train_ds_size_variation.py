@@ -110,7 +110,7 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
             ddef['b10_train'](),
             ddef['PhA_train'](),
             ddef['CSD_train'](),
-            ddef['winterreise_training']
+            ddef['winterreise_training']()
         ]
         dataset_validation = ConcatDataset([
             ddef['b10_validation'](),
