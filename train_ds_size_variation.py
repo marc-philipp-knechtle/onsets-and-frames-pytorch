@@ -105,7 +105,19 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
             ddef['MuN_non-piano_validation']()
         ])
     elif train_on == 'mixed':
-        ...
+        dataset_training: List[Dataset] = [
+            ddef['MuN_train'](),
+            ddef['b10_train'](),
+            ddef['PhA_train'](),
+            ddef['CSD_train'](),
+            ddef['winterreise_training']
+        ]
+        dataset_validation = ConcatDataset([
+            ddef['b10_validation'](),
+            ddef['CSD_validation'](),
+            ddef['RWC_non-piano_validation'](),
+            ddef['MuN_non-piano_validation']()
+        ])
     else:
         raise RuntimeError(f'Unknown train_on value: {train_on}.')
 
