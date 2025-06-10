@@ -26,7 +26,7 @@ spec:
 #           command: ["python3", "onsets-and-frames-pytorch/train.py", "with", "train_on=all", "logdir=runs/02-14-comparing-run", "checkpoint_interval=10000"]
 #          command: ["python3", "onsets-and-frames-pytorch/train.py", "with", "train_on=comparing", "logdir=runs/02-14-comparing-run", "checkpoint_interval=10000"]
 #           command: ["python3", "onsets-and-frames-pytorch/transcribe.py", "models/model-451000.pt", "--audio_paths" , "data/MAESTRO", "--save-path", "predictions", "--onset-threshold=0.4", "--frame-threshold=0.4", "--save-frames=True", "--save-onsets=True"]
-          command: ["python3", "onsets-and-frames-pytorch/transcribe.py", "models/05-25-comparing.pt", "--audio_paths" , "data/inference-dirs-wout-maestro", "--save-path", "predictions", "--onset-threshold=0.4", "--frame-threshold=0.4", "--save-frames=True", "--save-onsets=True"]
+          command: ["python3", "onsets-and-frames-pytorch/transcribe.py", "models/06-08-size-mixed-10.pt", "--audio_paths" , "data/inference-dirs-wout-maestro", "--save-path", "predictions", "--onset-threshold=0.4", "--frame-threshold=0.4", "--save-frames=True", "--save-onsets=True"]
           # This command was used for debugging of the pods (infinite sleeping)
           # command: ["/bin/bash", "-c", "--"]
           # args: [ "while true; do sleep 30; done;" ]

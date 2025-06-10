@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="train_lodo_models on=comparing logdir=runs/debugging" type="PythonConfigurationType" factoryName="Python">
+  <configuration default="false" name="train_lodo_models on=all logdir=runs/debugging" type="PythonConfigurationType" factoryName="Python">
     <module name="onsets-and-frames-pytorch" />
     <option name="ENV_FILES" value="" />
     <option name="INTERPRETER_OPTIONS" value="" />
