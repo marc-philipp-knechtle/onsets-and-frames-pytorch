@@ -353,7 +353,8 @@ def create_model(device, learning_rate, logdir, model_complexity, resume_iterati
 
 
 def run_iteration(batch: Dict, checkpoint_interval, clip_gradient_norm, i, logdir, model, optimizer, scheduler,
-                  validation_dataset, validation_interval, writer: SummaryWriter, early_stopping: EarlyStopping):
+                  validation_dataset, validation_interval, writer: SummaryWriter, early_stopping: EarlyStopping,
+                  eval_frame_threshold=0.5, eval_onset_threshold=0.5):
     predictions, losses = model.run_on_batch(batch)
     loss = sum(losses.values())
     optimizer.zero_grad()
@@ -367,7 +368,8 @@ def run_iteration(batch: Dict, checkpoint_interval, clip_gradient_norm, i, logdi
     if i % validation_interval == 0:
         model.eval()
         with torch.no_grad():
-            eval_dct = evaluate(validation_dataset, model)
+            eval_dct = evaluate(validation_dataset, model, onset_threshold=eval_onset_threshold,
+                                frame_threshold=eval_frame_threshold)
             aps = evaluate_ap(validation_dataset, model)
             for key, value in eval_dct.items():
                 writer.add_scalar('validation/' + key.replace(' ', '_'), np.mean(value), global_step=i)
