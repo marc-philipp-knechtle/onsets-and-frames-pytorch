@@ -66,7 +66,7 @@ def extract_notes_from_frames(frames, threshold):
 
 
 
-def extract_notes(onsets, frames, velocity, onset_threshold=0.5, frame_threshold=0.5):
+def extract_notes(onsets, frames, velocity=None, onset_threshold=0.5, frame_threshold=0.5):
     """
     Finds the note timings based on the onsets and frames information
 
@@ -101,6 +101,9 @@ def extract_notes(onsets, frames, velocity, onset_threshold=0.5, frame_threshold
     Tensor of False where there is not an onset, true wherer there is
     shape: [frames, bins] (bins=88, because of piano keys)
     """
+
+    if velocity is None:
+        velocity = torch.full_like(frames, fill_value=60)
 
     pitches = []
     intervals = []
