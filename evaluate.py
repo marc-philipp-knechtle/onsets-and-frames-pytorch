@@ -101,10 +101,14 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
         """
 
         required_keys_oaf = ['onset', 'frame', 'velocity']
+        required_keys_oaf_wout_velocity = ['onset', 'frame']
         required_keys_frame_model = ['frame']
 
         if all(key in prediction for key in required_keys_oaf):
             p_est, i_est, v_est = extract_notes(prediction['onset'], prediction['frame'], prediction['velocity'],
+                                                onset_threshold, frame_threshold)
+        elif all(key in prediction for key in required_keys_oaf_wout_velocity):
+            p_est, i_est, v_est = extract_notes(prediction['onset'], prediction['frame'], None,
                                                 onset_threshold, frame_threshold)
         elif all(key in prediction for key in required_keys_frame_model):
             p_est, i_est, v_est = extract_notes_from_frames(prediction['frame'], frame_threshold)
@@ -181,7 +185,7 @@ def evaluate(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames, onset_t
     return metrics
 
 
-def evaluate_ap(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames) -> List[float]:
+def evaluate_ap(pianoroll_dataset: IterableDataset, model) -> List[float]:
     """
 
     Args:
@@ -215,7 +219,12 @@ def evaluate_ap(pianoroll_dataset: IterableDataset, model: OnsetsAndFrames) -> L
         precision_recall_pairs_frame: List[Tuple[float, float]] = []
 
         for threshold in np.arange(0, 1.0, 0.05):
-            p_est, i_est, v_est = extract_notes(prediction['onset'], prediction['frame'], prediction['velocity'],
+
+            velocity_prediction = None
+            if 'velocity' in prediction:
+                velocity_prediction = prediction['velocity']
+
+            p_est, i_est, v_est = extract_notes(prediction['onset'], prediction['frame'], velocity_prediction,
                                                 threshold, threshold)
             t_est, f_est = notes_to_frames(p_est, i_est, prediction['frame'].shape)
             t_est = t_est.astype(np.float64) * scaling

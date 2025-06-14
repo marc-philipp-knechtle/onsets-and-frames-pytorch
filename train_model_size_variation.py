@@ -17,6 +17,7 @@ from onsets_and_frames import *
 
 from onsets_and_frames.dataset import dataset_definitions as ddef
 from onsets_and_frames.earlystopping import EarlyStopping
+from onsets_and_frames.transcriber import OnsetsAndFramesWoutVel
 from train import create_model, run_iteration
 
 ex = Experiment('train_transcriber')
@@ -83,6 +84,7 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
     loader = DataLoader(dataset_training, batch_size, drop_last=True, shuffle=True)
 
     model, optimizer, resume_iteration = create_model(device, learning_rate, logdir, model_complexity, resume_iteration)
+    assert isinstance(model, OnsetsAndFramesWoutVel)
     summary(model)
     scheduler = StepLR(optimizer, step_size=learning_rate_decay_steps, gamma=learning_rate_decay_rate)
     early_stopping = EarlyStopping()
