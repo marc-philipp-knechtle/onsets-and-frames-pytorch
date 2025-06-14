@@ -77,7 +77,7 @@ def training_process(batch_size: int, checkpoint_interval: int, clip_gradient_no
                      validation_interval: int, validation_length: int, writer: SummaryWriter, clear_computed: bool):
     dataset_training = ConcatDataset([
         ddef['MuN_train'](),
-        ddef['b1_train'](),
+        ddef['b10_train'](),
         ddef['PhA_train'](),
         ddef['CSD_train'](),
         ddef['winterreise_training']()
