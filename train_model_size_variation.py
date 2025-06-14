@@ -1,28 +1,19 @@
-import glob
 import logging
-import re
 import os
 import sys
 from datetime import datetime
-import random
-from typing import List, Tuple, Dict
+from typing import Dict
 
-import numpy as np
 import torch.utils.data
-from caffe2.python.net_printer import print_task_group
 from sacred import Experiment
 from sacred.commands import print_config
 from sacred.observers import FileStorageObserver
-from torch.nn.utils import clip_grad_norm_
 from torch.optim.lr_scheduler import StepLR
-from torch.utils.data import DataLoader, ConcatDataset, Dataset
+from torch.utils.data import DataLoader, ConcatDataset
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from evaluate import evaluate, evaluate_ap
 from onsets_and_frames import *
-from onsets_and_frames.dataset import SchubertWinterreiseDataset, SchubertWinterreiseVoice, SchubertWinterreisePiano, \
-    PianoRollAudioDataset
 
 from onsets_and_frames.dataset import dataset_definitions as ddef
 from onsets_and_frames.earlystopping import EarlyStopping
