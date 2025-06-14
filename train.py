@@ -23,6 +23,7 @@ from onsets_and_frames.dataset import SchubertWinterreiseDataset, SchubertWinter
 
 from onsets_and_frames.dataset import dataset_definitions as ddef
 from onsets_and_frames.earlystopping import EarlyStopping
+from onsets_and_frames.transcriber import OnsetsAndFramesWoutVel
 
 ex = Experiment('train_transcriber')
 
@@ -323,7 +324,7 @@ def create_sampler(dataset_training: ConcatDataset) -> torch.utils.data.Weighted
 def create_model(device, learning_rate, logdir, model_complexity, resume_iteration):
     if resume_iteration is None and "transcriber" in logdir:
         logging.info("Creating logdir automatically and beginning training from the start.")
-        model = OnsetsAndFrames(N_MELS, MAX_MIDI - MIN_MIDI + 1, model_complexity).to(device)
+        model = OnsetsAndFramesWoutVel(N_MELS, MAX_MIDI - MIN_MIDI + 1, model_complexity).to(device)
         optimizer = torch.optim.Adam(model.parameters(), learning_rate)
         resume_iteration = 0
     elif 'transcriber' not in logdir:
@@ -340,7 +341,7 @@ def create_model(device, learning_rate, logdir, model_complexity, resume_iterati
             optimizer.load_state_dict(torch.load(os.path.join(logdir, 'last-optimizer-state.pt')))
             logging.info(f"Resuming training at previously automatically determined state: {model_path}")
         else:
-            model = OnsetsAndFrames(N_MELS, MAX_MIDI - MIN_MIDI + 1, model_complexity).to(device)
+            model = OnsetsAndFramesWoutVel(N_MELS, MAX_MIDI - MIN_MIDI + 1, model_complexity).to(device)
             optimizer = torch.optim.Adam(model.parameters(), learning_rate)
             resume_iteration = 0
             logging.info("Creating logdir automatically and beginning training from the start.")
