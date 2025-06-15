@@ -15,7 +15,7 @@ from watchdog.events import FileSystemEventHandler
 
 from onsets_and_frames import *
 from onsets_and_frames.decoding import extract_notes_from_frames
-from onsets_and_frames.transcriber import Frames
+from onsets_and_frames.transcriber import Frames, OnsetsAndFramesWoutVel
 
 
 def float_samples_to_int16(y):
@@ -74,6 +74,16 @@ def transcribe(model, audio: Tensor) -> Dict[str, Any]:
             'offset': offset_pred.reshape((offset_pred.shape[1], offset_pred.shape[2])),
             'frame': frame_pred.reshape((frame_pred.shape[1], frame_pred.shape[2])),
             'velocity': velocity_pred.reshape((velocity_pred.shape[1], velocity_pred.shape[2]))
+        }
+    elif type(model) == OnsetsAndFramesWoutVel:
+        onset_pred, offset_pred, _, frame_pred = model(melspect)
+
+        predictions = {
+            'onset': onset_pred.reshape((onset_pred.shape[1], onset_pred.shape[2])),
+            'offset': offset_pred.reshape((offset_pred.shape[1], offset_pred.shape[2])),
+            'frame': frame_pred.reshape((frame_pred.shape[1], frame_pred.shape[2])),
+            # velocity will be duplicated (with static variable) during decoding if specified as None here!
+            'velocity': None
         }
     elif type(model) == Frames:
         frame_pred = model(melspect)
