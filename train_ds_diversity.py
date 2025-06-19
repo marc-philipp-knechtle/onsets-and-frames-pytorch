@@ -44,7 +44,7 @@ training_run_capacities = {
     'MuN': {'MusicNet': 288},
     'MuN+B10': {'MusicNet': 284, 'Bach10': 8},
     'MuN+B10+PhA': {'MusicNet': 282, 'Bach10': 4, 'PhenicxAnechoic': 8},
-    'MuN+B10+PhA+CSD': {'MusicNet': 272, 'Bach10': 4, 'PhenicxAnechoic': 2, 'ChoralSinginDataset': 10},
+    'MuN+B10+PhA+CSD': {'MusicNet': 272, 'Bach10': 4, 'PhenicxAnechoic': 2, 'ChoralSingingDataset': 10},
     'all': {'MusicNet': 207, 'Bach10': 4, 'PhenicxAnechoic': 2, 'ChoralSingingDataset': 5, 'SchubertWinterreiseDataset': 65},
 }
 
